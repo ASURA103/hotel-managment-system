@@ -7,7 +7,7 @@ const hotelSlice = createSlice({
         fromDate: null,
         toDate: null,
         rooms: null,
-        roomType: null
+        RoomType: null
     },
     reducers: {
        updateItem: (state,action) =>{
@@ -15,7 +15,7 @@ const hotelSlice = createSlice({
             state.fromDate= action.payload.fromDate,
             state.toDate= action.payload.toDate,
             state.rooms= action.payload.rooms,
-            state.roomType= action.payload.roomType
+            state.RoomType= action.payload.RoomType
        } 
     }
 })

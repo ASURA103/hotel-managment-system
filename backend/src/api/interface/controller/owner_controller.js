@@ -69,11 +69,25 @@ export const ownerSignin = async(req,res) =>{
 
 export const hotelBookings = async(req,res)=>{
     try {
-        const hotels =  await hotel.findOne({
+        const hotels =  await hotel.find({
             createdBy: req.userId
         })
-        const bookings = await bookings.find({hotelId: hotels._id}).populate('name','hotelName')
-        res.json(bookings)
+        let books = []
+        for(let item = 0;item<hotels.length;item++){
+            const booking = await bookings.find({hotelId: hotels[item]._id})
+        .populate({
+            path:'hotelId',
+            select:'name'
+        })
+        .populate({
+            path:'bookedBy',
+            select: 'name'
+        })
+        
+         books = await books.concat(booking)
+        }
+        console.log(books)
+        res.json(books)
     } catch (error) {
         console.log("error while fetching booking of hotel",error)
         res.json("error whil fetching booking of hotel")

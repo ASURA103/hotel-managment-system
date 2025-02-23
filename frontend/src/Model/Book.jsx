@@ -1,130 +1,172 @@
-import React, { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { B_URL } from '../../config.js';
 import { toast, Toaster } from 'sonner';
+import axios from "axios";
 
 const Book = () => {
-    const navigate = useNavigate();
-    const location = useLocation();
-    const hotel = location.state
-    const [formData,setFormData] =useState({
-       fromDate:"",
-       toDate:"",
-       rooms:"",
-       RoomType:""
-
-    })
-    useEffect(()=>{
-        if(!localStorage.getItem("token")){
-        
-            navigate("/user/auth")
-        }
-
-    })
-     function handleChange(e,type){
-        setFormData(
-            {
-                ...formData,
-                [type]: e.target.value
-            }
-        )
-
-     }
-     async function handleSubmit(){
-        try{
-        const response = await axios.post(`${B_URL}/user/bookH`,formData)
-        toast.success("Hotel Booked Successful")
-        setTimeout(()=>{
-            navigate("/")
-        },2000)
-    }catch(error){
-        toast.error("Invalid credentials")
-        console.log("error while booking hotel".error)
+  const navigate = useNavigate();
+  const location = useLocation();
+  const hotel = location.state;
+  const today =new Date().toISOString().split('T')[0]
+  
+  const [formData, setFormData] = useState({
+    fromDate: "",
+    toDate: "",
+    rooms: 1,
+    bill: "",
+    RoomType: "",
+    hotelId: hotel._id
+  });
+  
+  useEffect(() => {
+    if (!localStorage.getItem("token")) {
+      navigate("/user/auth");
     }
-     }
-    
+  }, [navigate]);
+  
+  function handleChange(e, type) {
+    setFormData({
+      ...formData,
+      [type]: e.target.value
+    });
+  }
+  
+  async function handleSubmit(e) {
+    e.preventDefault();
+    try {
+      const response = await axios.post(`${B_URL}/user/bookH`, formData, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      toast.success("Hotel Booked Successfully!");
+      setTimeout(() => {
+        navigate("/");
+      }, 2000);
+    } catch (error) {
+      toast.error("Error while booking the hotel.");
+      console.error("Error:", error);
+    }
+  }
+
+  
+  useEffect(() => {
+    calculateBill();
+  }, [formData.fromDate, formData.toDate, formData.rooms]);
+
+  const calculateBill = () => {
+    if (formData.fromDate && formData.toDate) {
+      const fromDate = new Date(formData.fromDate);
+      const toDate = new Date(formData.toDate);
+
+      if (toDate >= fromDate) {
+        const days = (toDate - fromDate) / (1000 * 60 * 60 * 24); // Convert milliseconds to days
+        const bill = days === 0 ? hotel.price * formData.rooms : days * hotel.price * formData.rooms;
+        setFormData(prevFormData => ({
+          ...prevFormData,
+          bill: bill
+        }));
+      }
+    }
+  };
 
   return (
-    <div className=' w-screen h-full pt-4'>
-    <div className=" bg-[#00b4d8] px-4 pb-4  rounded-[10vh] shadow-lg shadow-[#03045e] text-white w-[100vh] justify-self-center  ">
-        <h1 className='text-center text-4xl font-extrabold'> BOOK HOTEL {hotel.name}</h1>
-        <div>
-            <img src={hotel.Image} alt={hotel.name} className='w-full h-[50vh] rounded-t-[7vh]' />
-        </div>
-      <h1>Chek Booking Details for {hotel.name}</h1>
-      <p>Area: {hotel.area}</p>
-      <p>City: {hotel.city}</p>
-      <p>State: {hotel.state}</p>
-      <p>Price: ₹{hotel.price} per night</p>
-      <div>
-      <form className=" rounded-[10vh] w-full  content-center ">
-        <div className=" flex justify-between border-[#03045e] border w-full">
-          <div className=" w-full">
-            <label className="  cursor-pointer   text-sm font-medium   " htmlFor="date">
-              From{" "}
-            </label>
-            <input
-              type="date"
-              id="date"
-              className=" bg-[#00b4d8] w-full rounded-md  shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              onChange={(e) =>handleChange(e, "fromDate")}
-            />
-          </div>
-          <div className=" w-full">
-            <label className="  cursor-pointer   text-sm font-medium   " htmlFor="date">
-              To{" "}
-            </label>
-            <input
-              type="date"
-              id="date"
-              className=" bg-[#00b4d8] w-full rounded-md  shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              onChange={(e) =>handleChange(e, "toDate")}
-            />
-          </div>
-        </div>
-        <div className="border-[#03045e] border  w-full ">
-          <label className="  cursor-pointer text-sm font-medium   " htmlFor="rooms">
-            Number of Rooms{" "}
-          </label>
-          <input
-            type="number"
-            id="rooms"
-            min={1}
-            defaultValue={1}
-            className=" bg-[#00b4d8] w-full rounded-md  shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            onChange={(e) =>handleChange(e, "rooms")}
+    <div className="w-screen h-full bg-gradient-to-r from-blue-500 to-teal-400 py-8">
+      <div className="max-w-4xl mx-auto bg-white p-8 rounded-3xl shadow-lg space-y-6">
+        <h1 className="text-center text-4xl font-bold text-gray-800">Book Your Stay at {hotel.name}</h1>
+        <div className="flex justify-center">
+          <img
+            src={hotel.Image}
+            alt={hotel.name}
+            className="w-full h-[40vh] object-cover rounded-3xl shadow-lg"
           />
         </div>
-        <div className="border-[#03045e] border  w-full ">
-          <label className="  cursor-pointer text-sm font-medium   " htmlFor="type">
-            Room Type{" "}
-          </label>
-          <select
-            className=" bg-[#00b4d8]"
-            name=""
-            id="type"
-            onChange={(e) =>handleChange(e, "RoomType")}
-          >
-            <option value="">Select</option>
-            <option value="AC">AC</option>
-            <option value="NonAc">NonAc</option>
-          </select>
-        </div>
-        <div className='justify-self-center'>
-        <button
-          type="submit"
-          className=" border-2 border-black  mt-2  h-[35px] rounded-[20vh] px-2 flex justify-center text-2xl     shadow-md hover:shadow-current   font-medium text-white bg-blue-700 hover:bg-[#03045e] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          onClick={ handleSubmit}
-        >
-          Confirm{" "}
-        </button>
-        </div>
-      </form>
-    </div>
-    </div>
-    <Toaster />
-    </div>
-  )
-}
 
-export default Book
+        <div className="text-center text-lg text-gray-700">
+          <p><strong>Area:</strong> {hotel.area}</p>
+          <p><strong>City:</strong> {hotel.city}</p>
+          <p><strong>State:</strong> {hotel.state}</p>
+          <p><strong>Price:</strong> ₹{hotel.price} per night</p>
+        </div>
+
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="fromDate" className="block text-sm font-medium text-gray-600">Check-in Date</label>
+              <input
+                type="date"
+                id="fromDate"
+                min={today}
+                className="w-full p-3 mt-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => handleChange(e, "fromDate")}
+              />
+            </div>
+            <div>
+              <label htmlFor="toDate" className="block text-sm font-medium text-gray-600">Check-out Date</label>
+              <input
+                type="date"
+                id="toDate"
+                min={today}
+                className="w-full p-3 mt-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => handleChange(e, "toDate")}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="rooms" className="block text-sm font-medium text-gray-600">Number of Rooms</label>
+            <input
+              type="number"
+              id="rooms"
+              min="1"
+              defaultValue="1"
+              className="w-full p-3 mt-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => handleChange(e, "rooms")}
+            />
+          </div>
+          <div className="relative">
+            <label htmlFor="bill" className="block text-sm font-medium text-gray-600">Total Bill</label>
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <span className="text-gray-600  text-[20px] mt-7 ">₹</span>
+            </div>
+            <input
+              type="number"
+              id="bill"
+              value={formData.bill}
+              readOnly
+              className="w-full pl-6 p-3 mt-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+
+          <div>
+            <label htmlFor="RoomType" className="block text-sm font-medium text-gray-600">Room Type</label>
+            <select
+              id="RoomType"
+              className="w-full p-3 mt-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => handleChange(e, "RoomType")}
+            >
+              <option value="">Select Room Type</option>
+              <option value="AC">AC</option>
+              <option value="NonAc">NonAC</option>
+            </select>
+          </div>
+
+          <div className="text-center">
+            <button
+              type="submit"
+              className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 focus:ring-4 focus:ring-blue-300"
+            >
+              Confirm Booking
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <Toaster />
+    </div>
+  );
+};
+
+export default Book;

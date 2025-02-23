@@ -8,6 +8,7 @@ import AdminDashboard from "./Pages/AdminDashboard"
 import AdminAuth from "./Pages/AdminAuth"
 import Searchpage from "./Pages/searchpage"
 import Book from "./Model/Book"
+import UBookings from "./Pages/UBookings"
 
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
       <Route path="/admin/dashboard" element={<AdminDashboard />}  />
       <Route path="/search" element={<Searchpage />} />
       <Route path="/book" element={<Book  />} />
+      <Route path="/bookings" element={<UBookings /> } />
       
      </Routes>
     </BrowserRouter>

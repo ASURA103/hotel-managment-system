@@ -7,14 +7,15 @@ import { updateItem } from "../lib/store.js";
 const SearchBar = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [val, setVal] = useState(false);
-  const [values, setValues] = React.useState({
+  const today =new Date().toISOString().split('T')[0]
+  const [values, setValues] = useState({
     value: "Mohali",
     fromDate: null,
     toDate: null,
     roomType: null,
     rooms: 1,
   });
+
   function handleChange(e, type) {
     setValues((prev) => ({
       ...prev,
@@ -23,89 +24,101 @@ const SearchBar = () => {
   }
 
   function handleSubmit(e) {
-    console.log(values)
     e.preventDefault();
     dispatch(updateItem(values));
     navigate("/search");
   }
-  return (
-    <div className="  rounded-[10vh]  w-[100vh] shadow-lg shadow-[#03045e] text-white  ">
-      <form className=" rounded-[10vh] w-full flex bg-[#00b4d8] content-center r">
-        <div className="rounded-l-[10vh] border border-[#03045e]  w-full">
-          <label className="  cursor-pointer ml-2 text-sm font-medium    " htmlFor="Name">
-            Name,city{" "}
-          </label>
-          <input
-            type="text"
-            id="Name"
-            className="  pl-3 bg-[#00b4d8] w-full rounded-bl-[10vh]  shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            onChange={(e) =>handleChange(e, "value")}
-          />
-        </div>
-        <div className="flex  border-[#03045e] border w-full">
-          <div className=" w-full">
-            <label className="  cursor-pointer   text-sm font-medium   " htmlFor="date">
-              From{" "}
-            </label>
-            <input
-              type="date"
-              id="date"
-              className=" bg-[#00b4d8] w-full rounded-md  shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              onChange={(e) =>handleChange(e, "fromDate")}
-            />
-          </div>
-          <div className=" w-full">
-            <label className="  cursor-pointer   text-sm font-medium   " htmlFor="date">
-              To{" "}
-            </label>
-            <input
-              type="date"
-              id="date"
-              className=" bg-[#00b4d8] w-full rounded-md  shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              onChange={(e) =>handleChange(e, "toDate")}
-            />
-          </div>
-        </div>
-        <div className="border-[#03045e] border  w-full ">
-          <label className="  cursor-pointer text-sm font-medium   " htmlFor="rooms">
-            Number of Rooms{" "}
-          </label>
-          <input
-            type="number"
-            id="rooms"
-            min={1}
-            defaultValue={1}
-            className=" bg-[#00b4d8] w-full rounded-md  shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            onChange={(e) =>handleChange(e, "rooms")}
-          />
-        </div>
-        <div className="border-[#03045e] border  w-full ">
-          <label className="  cursor-pointer text-sm font-medium   " htmlFor="type">
-            Room Type{" "}
-          </label>
-          <select
-            className=" bg-[#00b4d8]"
-            name=""
-            id="type"
-            onChange={(e) =>handleChange(e, "roomType")}
-          >
-            <option value="">Select</option>
-            <option value="AC">AC</option>
-            <option value="NonAc">NonAc</option>
-          </select>
-        </div>
 
-        <button
-          type="submit"
-          className=" rounded-r-[10vh] h-full  w-[50vh] flex justify-center py-4 px-4    shadow-sm text-sm font-medium text-white bg-blue-700 hover:bg-[#03045e] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          onClick={(e) => handleSubmit(e)}
-        >
-          <FiSearch className="mr-[1px] text-xl " />
-          Search{" "}
-        </button>
+  return (
+    <div className="z-20 flex justify-center mt-16 px-4 md:px-0">
+      <form
+        className="w-full max-w-4xl bg-white p-6 rounded-lg shadow-xl border border-gray-300"
+        onSubmit={handleSubmit}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Location Input */}
+          <div className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700">Location</label>
+            <input
+              type="text"
+              id="location"
+              value={values.value}
+              onChange={(e) => handleChange(e, "value")}
+              className="mt-2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter city or hotel name"
+            />
+          </div>
+
+          {/* From Date Input */}
+          <div className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700">From</label>
+            <input
+              type="date"
+              id="fromDate"
+              min={today}
+              value={values.fromDate}
+              onChange={(e) => handleChange(e, "fromDate")}
+              className="mt-2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* To Date Input */}
+          <div className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700">To</label>
+            <input
+              type="date"
+              id="toDate"
+              min={today}
+              value={values.toDate}
+              onChange={(e) => handleChange(e, "toDate")}
+              className="mt-2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Number of Rooms Input */}
+          <div className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700">Rooms</label>
+            <input
+              type="number"
+              id="rooms"
+              min={1}
+              value={values.rooms}
+              onChange={(e) => handleChange(e, "rooms")}
+              className="mt-2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Room Type Select */}
+          <div className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700">Room Type</label>
+            <select
+              id="roomType"
+              value={values.roomType}
+              onChange={(e) => handleChange(e, "roomType")}
+              className="mt-2 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select</option>
+              <option value="AC">AC</option>
+              <option value="NonAc">Non-AC</option>
+            </select>
+          </div>
+
+          {/* Submit Button */}
+          <div className="flex items-center justify-center mt-6 sm:col-span-3">
+            <button
+              type="submit"
+              onClick={handleSubmit}
+              className="w-full bg-blue-600 text-white py-3 px-4 rounded-md flex items-center justify-center hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <FiSearch className="mr-2 text-xl" />
+              Search
+            </button>
+          </div>
+        </div>
       </form>
     </div>
   );
 };
 
 export default SearchBar;
+

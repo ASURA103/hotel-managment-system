@@ -13,6 +13,10 @@ const bookingsSchema= new mongoose.Schema({
         type: Number,
         required: true
     },
+    bill:{
+        type: Number,
+        required: true
+    },
     RoomType: {
         type: String,
         required: true
@@ -24,7 +28,7 @@ const bookingsSchema= new mongoose.Schema({
     }],
     hotelId: [{
         type: Schema.Types.ObjectId,
-        ref: 'hotels',
+        ref: 'hotel',
         required: true
     }]
 })

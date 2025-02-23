@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { B_URL } from '../../config.js'
 import { toast, Toaster } from 'sonner'
-import SearchBar from '../Components/SearchBar.jsx'
+import SearchBar from '../Components/SearchBar1.jsx'
 import { useNavigate } from 'react-router-dom'
 
 export const Searchpage = ({}) => {
@@ -35,8 +35,8 @@ export const Searchpage = ({}) => {
         }
   return (
     < > 
-    <div className=" bg-[#90e0ef] text-[#03045e] h-screen ">
-     <div className=" px-[48vh] z-10  ">
+    <div className=" bg-[#90e0ef] text-[#03045e] h-screen pt-4 ">
+     <div className=" px-[32vh] z-10  ">
             <SearchBar  />
           </div>
     <Toaster />

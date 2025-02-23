@@ -1,4 +1,4 @@
-import express from "express"
+import express, { response } from "express"
 import { adminSigninValidator } from "../../config/helper/validators.js"
 import admin from "../../config/schema/admin.schema.js"
 import jwt from "jsonwebtoken"
@@ -34,9 +34,45 @@ export const adminSignin = async(req,res) =>{
         return res.status(403).json("error while signin up")
     }
 }
+export const AddAdmine = async(req,res)=>{
+    const body =req.body
+    try {
+        const success = adminSigninValidator.safeParse(body)
+        if(!success.success){
+            return res.status(403).json({msg: "input not in format "})
+        }
+        const admins = await admin.find({})
+        if (admin.length === 3){
+            return res.status(401).json({msg: " maximum admin reached"})
+        }
+        const respones = await admin.create({
+            username: body.username,
+            password: body.password
+        })
+        const token = await jwt.sign(response._id.toHexString().env.SECRET_KEY)
+
+        res.json({
+            token: token
+        })
+    } catch (error) {
+        console.log("error while adding admin ",error)
+        res.status(401).json({
+            msg: "error while adding admin"
+        })
+        
+    }
+}
 export const AllBookings = async(req,res)=>{
     try {
-        const response = await bookings.find([]).populate('hotelName','name')
+        const response = await bookings.find({})
+        .populate({
+            path: 'hotelId',
+            select: 'name area city state price Image'
+        })
+        .populate({
+            path: "bookedBy",
+            select: 'name email'
+        })
         res.json(response)
     } catch (error) {
         console.log("error while feting all bookings",error)

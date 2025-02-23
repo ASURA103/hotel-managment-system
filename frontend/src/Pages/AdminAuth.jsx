@@ -26,6 +26,7 @@ const AdminAuth = ({position}) => {
         const response = await axios.post(`${B_URL}/admin/signin`,formData)
         localStorage.setItem("token",response.data.token)
         localStorage.setItem("name",response.data.username)
+        localStorage.setItem("type","admin")
         toast.success("Signin Successful")
         setTimeout(()=>{
             navigate("/admin/dashboard")

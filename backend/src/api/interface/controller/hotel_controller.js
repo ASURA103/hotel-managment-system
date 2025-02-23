@@ -136,11 +136,13 @@ export const searchHotel = async(req,res)=>{
 
 export const bookHotel = async(req,res)=>{
   const body = req.body;
+  console.log(new Date(body.fromDate))
   try {
       const book = await bookings.create({
           fromDate: new Date(body.fromDate),
           toDate: new Date(body.toDate),
           rooms: body.rooms,
+          bill:body.bill,
           RoomType: body.RoomType,
           bookedBy: req.userId,
           hotelId: body.hotelId
