@@ -38,7 +38,7 @@ const Landing = () => {
           {/* Hotel Card 1 */}
           <div className="max-w-xs bg-white shadow-lg rounded-lg hover:scale-105 transition-all duration-300 ease-in-out">
             <img
-              src="L3.avif"
+              src="L5.avif"
               alt="Taj Lake Palace"
               className="w-full h-56 object-cover rounded-t-lg"
             />
@@ -88,7 +88,7 @@ const Landing = () => {
           {/* Hotel Card 3 */}
           <div className="max-w-xs bg-white shadow-lg rounded-lg hover:scale-105 transition-all duration-300 ease-in-out">
             <img
-              src="L3.avif"
+              src="L17.avif"
               alt="Taj Mahal Palace"
               className="w-full h-56 object-cover rounded-t-lg"
             />
