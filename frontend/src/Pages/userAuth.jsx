@@ -24,15 +24,15 @@ const UserAuth = () => {
       >
         {" "}
         {position === "signup" ? (
-          <h1 className="flex justify-center text-white text-4xl w-[100%] h-screen ">
-            {" "}
-            Welcome to the  <span className="ml-2 font-bold text-6xl text-blue-500 ">DreamStay</span>{" "}
-          </h1>
+         <div>
+          {" "}
+          {" "}
+         </div>
         ) : (
-          <h1 className="flex justify-center items-center text-white text-4xl w-[100%] h-screen pb-[20vh]">
-            {" "}
-            Ready for an Adventure{" "}
-          </h1>
+          <div>
+          {" "}
+          {" "}
+         </div>
         )}{" "}
       </div>
     </div>

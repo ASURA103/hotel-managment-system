@@ -3,7 +3,7 @@ import React from 'react'
 
 const HotelCard = ({item,buttonName,buttonClick,children}) => {
   
-  
+  console.log(item)
   return (
     <div className='w-[70%] border-b flex justify-around p-2 items-center'>
       <div className={`w-36 h-36`} style={{background:`url(${item.Image})`,backgroundSize:"cover"}}></div>

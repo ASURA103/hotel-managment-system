@@ -159,7 +159,15 @@ export const bookHotel = async(req,res)=>{
 
 export const myBookings = async(req,res)=>{
   try{
-      const book = await bookings.find({bookedBy: req.userId})
+    const book = await bookings.find({bookedBy: req.userId})
+    .populate({
+        path: 'hotelId',
+        select: 'name area city price Image'
+    })
+    .populate({
+        path: "bookedBy",
+        select: 'name'
+    })
       res.json({
           bookings: book
       })

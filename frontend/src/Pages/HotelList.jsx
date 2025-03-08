@@ -42,9 +42,17 @@ console.log("hotels",hotels)
     }
   };
 
-  function edit() {
-    navigate("/seller/Edit");
-  }
+  const Edit = (hotel) => {
+    setCurrentHotel(hotel);
+    setFormData(hotel);
+    console.log("formData", formData);
+    setIsDialogOpen(true);
+  };
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
 
   return (
     <div className="hotel-list flex space-x-4 m-4">
@@ -58,7 +66,7 @@ console.log("hotels",hotels)
           </div>
           <div className="flex text-4xl  rounded-md justify-between px-2 shadow-lg shadow-[#14213d]  mb-4  ">
             <div className="cursor-pointer ">
-              <TbDatabaseEdit onClick={edit}  className="text-[#fca311] "/>
+              <TbDatabaseEdit onClick={Edit}  className="text-[#fca311] "/>
             </div>
             <div className="">
               <i className="font-extrabold text-2xl ">{hotel.name}</i>
