@@ -31,7 +31,7 @@ A full-stack Hotel Management System built using the MERN Stack (MongoDB, Expres
 
 📌 Live Demo
 
-(Add deployment link here later — Vercel / Netlify / Render)
+🔗 Live Demo: https://asura-dreamstay-hotelsite.vercel.app/
 
 🚀 Live Features
 👤 User Side
