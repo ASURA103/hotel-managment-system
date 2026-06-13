@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index.js"
+    "start": "node index.js",
+    "server": "nodemon index.js"
   },
   "author": "",
   "license": "ISC",
@@ -19,10 +20,11 @@
     "express": "^4.21.1",
     "firebase": "^11.0.2",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.8.1",
+    "mongodb": "^7.0.0",
+    "mongoose": "^9.0.1",
     "multer": "^1.4.5-lts.1",
     "node.js": "^0.0.1-security",
-    "nodemailer": "^6.9.16",
+    "nodemailer": "^7.0.11",
     "nodemon": "^3.1.7",
     "zod": "^3.23.8"
   }

@@ -2,6 +2,8 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { VscAccount } from "react-icons/vsc";
 import { FaHotel } from "react-icons/fa";
+import Practice from "./Practice.jsx";
+
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -17,7 +19,9 @@ const Navbar = () => {
   function Landing() {
     navigate("/");
   }
-
+ function Practice() {
+    navigate("/practice");
+ }
   function handleLogout() {
     localStorage.clear();
     window.location.reload();
@@ -25,7 +29,7 @@ const Navbar = () => {
   }
 
   return (
-    <div className="z-10 fixed w-full h-[10vh] bg-gradient-to-r from-blue-500 to-cyan-500 shadow-md">
+    <div className="z-10 fixed w-full h-[10vh]  shadow-md">
       <nav className="flex items-center justify-between px-3 py-1 h-full">
         {/* Logo Section */}
         <div

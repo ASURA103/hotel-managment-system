@@ -32,8 +32,8 @@ const Footer = () => {
             <h2 className="text-2xl font-semibold mb-4">About Us</h2>
             <p className="text-lg">We provide the best hotel experiences for travelers around the world.</p>
           </div>
-          <div>
-            <h2 className="text-2xl font-semibold mb-4">Quick Links</h2>
+          <div className="cursor-pointer">
+            <h2 className=" cursor-none text-2xl font-semibold mb-4">Quick Links</h2>
             <ul className="space-y-2">
               <li>
                 <a  className="hover:text-blue-600">Home</a>
@@ -47,7 +47,7 @@ const Footer = () => {
             </ul>
           </div>
           <div>
-            <h2 className="text-2xl font-semibold mb-4">Owner Services</h2>
+            <h2 className="cursor-none text-2xl font-semibold mb-4">Owner Services</h2>
             <ul className="space-y-2">
               <li>
                 <a
@@ -68,13 +68,13 @@ const Footer = () => {
             </ul>
           </div>
           <div>
-            <h2 className="text-2xl font-semibold mb-4">Feedback</h2>
+            <h2 className="cursor-none text-2xl font-semibold mb-4">Feedback</h2>
             <ul className="space-y-2">
               <li>
-                <a  className="hover:text-blue-600">Give Feedback</a>
+                <a  className="cursor-pointer hover:text-blue-600">Give Feedback</a>
               </li>
               <li>
-                <a className="hover:text-blue-600">Read Reviews</a>
+                <a className="cursor-pointer hover:text-blue-600">Read Reviews</a>
               </li>
             </ul>
           </div>

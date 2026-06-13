@@ -1,4 +1,4 @@
-import { BrowserRouter, Router, Route, Routes } from "react-router-dom"
+import { BrowserRouter, Route, Routes } from "react-router-dom"
 import Landing from "./Pages/Landing"
 import UserAuth from "./Pages/userAuth"
 import SellerAuth from "./Pages/SellerAuth"
@@ -9,6 +9,7 @@ import AdminAuth from "./Pages/AdminAuth"
 import Searchpage from "./Pages/searchpage"
 import Book from "./Model/Book"
 import UBookings from "./Pages/UBookings"
+import Practice from "./Components/Practice"
 
 
 function App() {
@@ -29,7 +30,7 @@ function App() {
       <Route path="/search" element={<Searchpage />} />
       <Route path="/book" element={<Book  />} />
       <Route path="/bookings" element={<UBookings /> } />
-      
+      <Route path="/practice" element={<Practice /> } />
      </Routes>
     </BrowserRouter>
       
