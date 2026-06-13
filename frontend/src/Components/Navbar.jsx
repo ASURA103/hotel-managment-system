@@ -2,8 +2,6 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { VscAccount } from "react-icons/vsc";
 import { FaHotel } from "react-icons/fa";
-import Practice from "./Practice.jsx";
-
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -19,9 +17,7 @@ const Navbar = () => {
   function Landing() {
     navigate("/");
   }
- function Practice() {
-    navigate("/practice");
- }
+
   function handleLogout() {
     localStorage.clear();
     window.location.reload();
