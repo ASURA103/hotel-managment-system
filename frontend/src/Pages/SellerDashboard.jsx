@@ -1,81 +1,3 @@
-// import React, { useEffect } from "react";
-// import { useNavigate } from "react-router-dom";
-// import HotelList from "./HotelList.jsx";
-
-// const SellerDashboard = () => {
-//   const navigate = useNavigate();
-
-//   useEffect(() => {
-//     if (!localStorage.getItem("token")) {
-//       navigate("/seller/auth");
-//     }
-//   }, [navigate]);
-
-//   function addhotel() {
-//     navigate("/seller/add");
-//   }
-
-//   function dash() {
-//     navigate("/seller/dashboard");
-//   }
-//   function edit() {
-//     navigate("/seller/dashboard");
-//   }
-
-//   function Landing() {
-//     navigate("/");
-//   }
-//   return (
-//     <div className="p-2  h-[100vh] flex">
-//       <div>
-//         <nav className="block  bg-gray-500 w-[20vh] shadow-lg shadow-current   rounded-md p-3">
-//           <div className="text-center  mb-3   " onClick={Landing}>
-//             <i className="  bg-black text-white hover:bg-white hover:text-black  font-extrabold text-4xl cursor-pointer rounded-md shadow-lg shadow-current px-1">
-//               Home
-//             </i>
-//           </div>
-
-//           <div className="">
-//             <i
-//               className=" bg-black text-white hover:bg-white hover:text-black   cursor-pointer text-2xl font-extrabold shadow-md shadow-current rounded-md "
-//               onClick={dash}
-//             >
-//               Dashboard
-//             </i>
-//           </div>
-
-//           <div className="m-1 mt-3">
-//             <b
-//               className=" bg-black text-white hover:bg-white hover:text-black rounded-md px-1 cursor-pointer shadow-md font-bold "
-//               onClick={addhotel}
-//             >
-//               addhotel{" "}
-//             </b>
-//           </div>
-//           <div className="m-1">
-//             <b
-//               className=" bg-black text-white hover:bg-white hover:text-black rounded-md px-1  cursor-pointer shadow-md font-bold "
-//               onClick={edit}
-//             >
-//               Hotels Bookings{" "}
-//             </b>
-//           </div>
-//           <div className="m-1">
-//             <b className=" bg-black text-white hover:bg-white hover:text-black rounded-md px-1  cursor-pointer shadow-md font-bold ">
-//               My Hotels{" "}
-//             </b>
-//           </div>
-//         </nav>
-//       </div>
-
-//       <div className=" w-[100%] bg-[#023e8a] ml-3 border-4 shadow-lg shadow-current rounded-md ">
-//         <HotelList />
-//       </div>
-//     </div>
-//   );
-// };
-// export default SellerDashboard;
-
 import React, { useEffect, useState } from "react";
 import SellerSideBar from "../Model/sellerSideBar.jsx";
 import NavbarShow from "../Components/NavbarShow.jsx";
@@ -84,26 +6,61 @@ import SDashboard from "../Model/sDashboard.jsx";
 
 const SellerDashboard = () => {
   const navigate = useNavigate();
+
   useEffect(() => {
     if (
       !localStorage.getItem("token") ||
       localStorage.getItem("type") !== "owner"
     ) {
-      navigate("seller/auth");
+      navigate("/seller/auth");
     }
   }, [navigate]);
+
   const [page, setPage] = useState("myhotel");
   const [showSidebar, setShowSidebar] = useState(true);
 
   function handleLogout() {
-    localStorage.clear()
+    localStorage.clear();
     navigate("/");
   }
 
   return (
-    <div className="flex">
+    <div
+      className="
+        min-h-screen
+        flex
+
+        bg-gradient-to-br
+        from-sky-50
+        via-white
+        to-cyan-50
+
+        dark:from-slate-950
+        dark:via-slate-900
+        dark:to-slate-950
+
+        overflow-hidden
+      "
+    >
+      {/* Sidebar */}
+
       <div
-        className={`${showSidebar? "translate-x-0" : "translate-x-[-25vw]"} transition-all ease-linear duration-300`}
+        className={`
+          fixed lg:relative
+          z-40
+
+          h-screen
+
+          ${
+            showSidebar
+              ? "translate-x-0"
+              : "-translate-x-full lg:-translate-x-[25vw]"
+          }
+
+          transition-all
+          duration-300
+          ease-in-out
+        `}
       >
         <SellerSideBar
           page={page}
@@ -111,21 +68,99 @@ const SellerDashboard = () => {
           setShowSidebar={setShowSidebar}
           showSidebar={showSidebar}
         />
-        <button
-                    onClick={handleLogout}
-                    className="px-4 py-2 bg-red-600 text-white rounded-b-lg w-full"
-                  >
-                    Logout
-                  </button>
+
+        {/* Logout Button */}
+
+        <div className="px-4 py-4 bg-white dark:bg-slate-900">
+          <button
+            onClick={handleLogout}
+            className="
+              w-full
+
+              py-3
+
+              rounded-2xl
+
+              bg-red-600
+              hover:bg-red-700
+
+              text-white
+              font-bold
+
+              shadow-lg
+              hover:shadow-red-500/30
+
+              hover:scale-[1.02]
+
+              transition-all
+              duration-300
+            "
+          >
+            Logout
+          </button>
+        </div>
       </div>
-      <div className="absolute top-5 left-5"><NavbarShow setShowSidebar={setShowSidebar} showSidebar={showSidebar} />
+
+      {/* Overlay on Mobile */}
+
+      {showSidebar && (
+        <div
+          className="
+            fixed inset-0
+
+            bg-black/40
+
+            backdrop-blur-sm
+
+            z-30
+
+            lg:hidden
+          "
+          onClick={() => setShowSidebar(false)}
+        ></div>
+      )}
+
+      {/* Navbar Toggle */}
+
+      <div className="fixed top-5 left-5 z-50">
+        <NavbarShow
+          setShowSidebar={setShowSidebar}
+          showSidebar={showSidebar}
+        />
       </div>
+
+      {/* Main Content */}
+
       <div
-        className={`${
-          showSidebar ? "w-[75vw]" : "w-[95vw] translate-x-[-12vw] "
-        }`}
+        className={`
+          flex-1
+
+          pt-20
+
+          transition-all
+          duration-300
+
+          ${
+            showSidebar
+              ? "lg:ml-0"
+              : "lg:w-[95vw]"
+          }
+        `}
       >
-       <SDashboard page={page} />
+        <div
+          className="
+            p-4 md:p-6
+
+            rounded-3xl
+
+            min-h-[calc(100vh-5rem)]
+
+            transition-all
+            duration-300
+          "
+        >
+          <SDashboard page={page} />
+        </div>
       </div>
     </div>
   );
