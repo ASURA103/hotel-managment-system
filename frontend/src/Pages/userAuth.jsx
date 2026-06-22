@@ -10,7 +10,7 @@ const UserAuth = () => {
   return (
     <div
       className=" relative  h-screen bg-cover bg-center "
-      style={{ backgroundImage: `url(${h})`, height: ``, width: `` }}
+     
     >
       <div className="z-0 min-h-screen grid grid-cols-2 bg-priamrybg">
         <UserSignup position={setPosition} />

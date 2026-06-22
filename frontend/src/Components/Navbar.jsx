@@ -1,78 +1,217 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import { VscAccount } from "react-icons/vsc";
 import { FaHotel } from "react-icons/fa";
+import { HiOutlineMenuAlt3, HiX } from "react-icons/hi";
+import { BsMoonStarsFill, BsSunFill } from "react-icons/bs";
+
+import { useTheme } from "./ThemeContext";
 
 const Navbar = () => {
   const navigate = useNavigate();
 
+  const { theme, toggleTheme } = useTheme();
+
+  const [openMenu, setOpenMenu] = useState(false);
+
   function userauth() {
-    navigate("user/auth");
+    navigate("/user/auth");
+    setOpenMenu(false);
   }
 
   function seller() {
-    navigate("seller/auth");
+    navigate("/seller/auth");
+    setOpenMenu(false);
   }
 
   function Landing() {
     navigate("/");
+    setOpenMenu(false);
   }
 
   function handleLogout() {
     localStorage.clear();
-    window.location.reload();
     navigate("/");
+    setOpenMenu(false);
   }
 
   return (
-    <div className="z-10 fixed w-full h-[10vh]  shadow-md">
-      <nav className="flex items-center justify-between px-3 py-1 h-full">
-        {/* Logo Section */}
-        <div
-          className="cursor-pointer hover:scale-105 transition-transform duration-300 h-full flex items-center"
-          onClick={Landing}
-        >
-          <img
-            src="logo.png"
-            alt="DreamStay Logo"
-            className="h-[20vh] mt-[10vh] object-contain"
-          />
-        </div>
+    <>
+      {/* NAVBAR */}
 
-        {/* Menu & List Property Section */}
-        <div className="flex items-center space-x-8">
+      <div
+        className="
+          fixed top-0 left-0 z-[1000]
+
+          w-full h-20
+
+          bg-white/80
+          dark:bg-slate-950/80
+
+          backdrop-blur-xl
+
+          border-b
+          border-slate-200
+          dark:border-slate-800
+
+          shadow-sm
+        "
+      >
+        <nav className="h-full max-w-7xl mx-auto px-4 flex items-center justify-between">
+          {/* LOGO */}
+
           <div
-            onClick={seller}
-            className="flex items-center bg-white text-gray-800 px-4 py-2 rounded-lg shadow-md cursor-pointer hover:bg-blue-700 hover:text-white hover:shadow-lg transition-all duration-300 ease-in-out"
+            onClick={Landing}
+            className="cursor-pointer flex items-center"
           >
-            <FaHotel className="text-3xl mr-2" />
-            <div>
-              <h1 className="text-xl font-semibold">List Your Property</h1>
-              <p className="text-sm text-gray-500">Grow Your Business!</p>
-            </div>
+            <img
+              src="/logo.png"
+              alt="DreamStay"
+              className="h-14 md:h-16 object-contain"
+            />
           </div>
 
-          {/* User Authentication / Profile Section */}
-          <div>
-            {localStorage.getItem("token") && localStorage.getItem("type") === "user" ? (
-              <div className="flex items-center gap-4 cursor-pointer relative">
-                <div
-                  className="w-32 h-12 font-primary font-bold rounded-3xl flex items-center justify-center text-lg"
+          {/* DESKTOP MENU */}
+
+          <div className="hidden md:flex items-center gap-5">
+            {/* List Property */}
+
+            <div
+              onClick={seller}
+              className="
+                flex items-center gap-3
+
+                px-4 py-2
+
+                rounded-2xl
+
+                bg-cardLight
+                dark:bg-cardDark
+
+                shadow-md
+
+                cursor-pointer
+
+                hover:scale-[1.02]
+
+                transition-all
+              "
+            >
+              <FaHotel className="text-2xl text-primary" />
+
+              <div>
+                <h1 className="font-semibold text-textLight dark:text-textDark">
+                  List Property
+                </h1>
+
+                <p className="text-xs text-mutedLight dark:text-mutedDark">
+                  Grow your business
+                </p>
+              </div>
+            </div>
+
+            {/* Theme */}
+
+            <button
+              onClick={toggleTheme}
+              className="
+                p-3
+
+                rounded-full
+
+                bg-cardLight
+                dark:bg-cardDark
+
+                shadow-md
+
+                text-textLight
+                dark:text-textDark
+
+                hover:scale-105
+
+                transition-all
+              "
+            >
+              {theme === "dark" ? (
+                <BsSunFill size={18} />
+              ) : (
+                <BsMoonStarsFill size={18} />
+              )}
+            </button>
+
+            {/* User */}
+
+            {localStorage.getItem("token") &&
+            localStorage.getItem("type") === "user" ? (
+              <div className="flex items-center gap-4">
+                <button
                   onClick={() => navigate("/bookings")}
+                  className="
+                    px-5 py-2
+
+                    rounded-xl
+
+                    bg-primary
+
+                    text-white
+
+                    hover:bg-secondary
+
+                    transition
+                  "
                 >
                   My Bookings
-                </div>
+                </button>
+
                 <div className="relative group">
-                  {/* User Profile Icon */}
-                  <div className="w-12 h-12 bg-[#03045e] text-white text-2xl font-bold rounded-full flex items-center justify-center cursor-pointer">
-                    {localStorage.getItem("name").charAt(0).toUpperCase()}
+                  <div
+                    className="
+                      w-12 h-12
+
+                      rounded-full
+
+                      bg-primary
+
+                      text-white
+
+                      flex items-center justify-center
+
+                      font-bold text-xl
+                    "
+                  >
+                    {localStorage
+                      .getItem("name")
+                      ?.charAt(0)
+                      ?.toUpperCase()}
                   </div>
 
-                  {/* Logout Button (Now properly positioned below profile icon) */}
-                  <div className="absolute right-0 mt-2 bg-white text-gray-800 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out">
+                  <div
+                    className="
+                      absolute right-0 top-14
+
+                      opacity-0
+                      invisible
+
+                      group-hover:opacity-100
+                      group-hover:visible
+
+                      transition-all
+                    "
+                  >
                     <button
                       onClick={handleLogout}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg w-full hover:bg-red-700 transition"
+                      className="
+                        px-5 py-2
+
+                        rounded-xl
+
+                        bg-red-600
+
+                        text-white
+
+                        hover:bg-red-700
+                      "
                     >
                       Logout
                     </button>
@@ -80,14 +219,121 @@ const Navbar = () => {
                 </div>
               </div>
             ) : (
-              <div className="text-white text-3xl cursor-pointer hover:scale-110 transition-transform duration-300">
-                <VscAccount onClick={userauth} />
-              </div>
+              <VscAccount
+                size={34}
+                onClick={userauth}
+                className="
+                  cursor-pointer
+
+                  text-textLight
+                  dark:text-textDark
+
+                  hover:scale-110
+
+                  transition
+                "
+              />
             )}
           </div>
+
+          {/* MOBILE RIGHT */}
+
+          <div className="md:hidden flex items-center gap-4">
+            <button onClick={toggleTheme}>
+              {theme === "dark" ? (
+                <BsSunFill
+                  size={22}
+                  className="text-textDark"
+                />
+              ) : (
+                <BsMoonStarsFill
+                  size={22}
+                  className="text-textLight"
+                />
+              )}
+            </button>
+
+            <button onClick={() => setOpenMenu(!openMenu)}>
+              {openMenu ? (
+                <HiX size={32} />
+              ) : (
+                <HiOutlineMenuAlt3 size={32} />
+              )}
+            </button>
+          </div>
+        </nav>
+      </div>
+
+      {/* MOBILE MENU */}
+
+      <div
+        className={`
+          md:hidden
+
+          fixed top-20 left-0 right-0
+
+          z-[999]
+
+          bg-white
+          dark:bg-slate-950
+
+          border-b
+
+          border-slate-200
+          dark:border-slate-800
+
+          shadow-2xl
+
+          transition-all duration-300 ease-in-out
+
+          ${
+            openMenu
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 -translate-y-5 pointer-events-none"
+          }
+        `}
+      >
+        <div className="flex flex-col gap-4 p-5">
+          <button
+            onClick={seller}
+            className="text-left text-lg hover:text-primary transition"
+          >
+            List Property
+          </button>
+
+          {localStorage.getItem("token") &&
+            localStorage.getItem("type") === "user" && (
+              <>
+                <button
+                  onClick={() => {
+                    navigate("/bookings");
+                    setOpenMenu(false);
+                  }}
+                  className="text-left text-lg hover:text-primary transition"
+                >
+                  My Bookings
+                </button>
+
+                <button
+                  onClick={handleLogout}
+                  className="text-left text-red-500 text-lg hover:text-red-600 transition"
+                >
+                  Logout
+                </button>
+              </>
+            )}
+
+          {!localStorage.getItem("token") && (
+            <button
+              onClick={userauth}
+              className="text-left text-lg hover:text-primary transition"
+            >
+              Login
+            </button>
+          )}
         </div>
-      </nav>
-    </div>
+      </div>
+    </>
   );
 };
 
