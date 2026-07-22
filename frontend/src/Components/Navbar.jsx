@@ -58,17 +58,17 @@ const Navbar = () => {
           shadow-sm
         "
       >
-        <nav className="h-full max-w-7xl mx-auto px-4 flex items-center justify-between">
+        <nav className="h-full max-w-7xl mx-auto px-3 flex items-center justify-between">
           {/* LOGO */}
 
           <div
             onClick={Landing}
-            className="cursor-pointer flex items-center"
+            className="cursor-pointer "
           >
             <img
               src="/logo.png"
               alt="DreamStay"
-              className="h-14 md:h-16 object-contain"
+              className=" h-[10rem] mt-[4.5rem] "
             />
           </div>
 
