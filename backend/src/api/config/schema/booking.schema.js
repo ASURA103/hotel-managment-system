@@ -33,6 +33,11 @@ const bookingsSchema= new mongoose.Schema({
     }]
 })
 
+// Availability lookups (per hotel, room type and date range) and "my bookings".
+bookingsSchema.index({ hotelId: 1, RoomType: 1, fromDate: 1, toDate: 1 })
+bookingsSchema.index({ bookedBy: 1 })
+
 const bookings = mongoose.model("bookings",bookingsSchema)
+bookings.on("index", (err) => { if (err) console.error("bookings index build failed:", err.message) })
 
 export default bookings

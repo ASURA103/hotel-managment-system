@@ -1,18 +1,24 @@
-import jwt from "jsonwebtoken"
-import env from "../../../infrastructure/env.js"
+import { verifyToken } from "./tokens.js"
+
+// Accepts "Authorization: Bearer <token>". Every failure is a 401 (never a crash);
+// on success sets req.userId (account id, as before) and req.role.
 function authMiddleware(req,res,next){
-    const authorization = req.headers.authorization;
-    const token = authorization.split(" ")[1];
+    const [scheme, token] = (req.headers.authorization || "").split(" ")
+    if (scheme !== "Bearer" || !token || token === "null" || token === "undefined") {
+        return res.status(401).json({msg:"token is required"})
+    }
     try {
-        const verification = jwt.verify(token,env.SECRET_KEY)
-        if(!verification){
-            return res.status(403).json({msg:"token is required"})
+        const payload = verifyToken(token)
+        if (typeof payload !== "object" || !payload.id || !payload.role) {
+            // tokens issued before roles existed: the user has to sign in again
+            return res.status(401).json({msg:"please sign in again"})
         }
-        req.userId = verification
+        req.userId = payload.id
+        req.role = payload.role
         next()
     } catch (error) {
-        console.log("error in auth middleware",error);
-        res.status(403).json({msg: "error in token"})
+        console.log("error in auth middleware", error.message);
+        res.status(401).json({msg: "error in token"})
     }
 }
 

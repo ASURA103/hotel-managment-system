@@ -1,25 +1,26 @@
-import jwt from "jsonwebtoken"
 import owner from "../../config/schema/owner.schema.js"
-import bcrypt from "bcryptjs"
 import { ownerSigninValidator,ownerSignupValidator } from "../../config/helper/validators.js";
-import env from "../../../infrastructure/env.js"
 import hotel from "../../config/schema/hotel.schema.js";
 import bookings from "../../config/schema/booking.schema.js";
+import { hashPassword, verifyPassword } from "../lib/passwords.js";
+import { ROLES, signToken } from "../lib/tokens.js";
+
+const withoutPassword = ({ password, ...rest } = {}) => rest;
+
 export const ownerSignup = async( req , res) =>{
     const body = req.body;
-    console.log(body)
-    const salt = bcrypt.genSaltSync(10)
+    console.log(withoutPassword(body))
     try {
         const success = ownerSignupValidator.safeParse(body)
-        console.log(success.error)
         if(!success.success){
-            return res.status(403).json({msg: "Data not in format"})
+            console.log(success.error.flatten().fieldErrors)
+            return res.status(400).json({msg: "Data not in format"})
         }
-        const hashedPass = bcrypt.hashSync(body.password,salt);
-        const check = await owner.findOne({email: body.email})
+        const check = await owner.findOne({email: body.email}).select("_id").lean()
         if(check){
             return res.status(401).json({msg: "owner already exists"})
         }
+        const hashedPass = await hashPassword(body.password);
         const response = await owner.create({
             name: body.name,
             phone:body.phone,
@@ -27,14 +28,17 @@ export const ownerSignup = async( req , res) =>{
             idProof: body.idProof,
             password: hashedPass
         })
-        const token = jwt.sign(response._id.toHexString(),env.SECRET_KEY)
+        const token = signToken(response._id, ROLES.OWNER)
         res.json({
             ownername: response.name,
             token: token
         })
     } catch (error) {
+        if (error?.code === 11000) {
+            return res.status(401).json({msg: "owner already exists"})
+        }
         console.log("error while signinup",error)
-        return res.status(402).json({msg: "error while signinup"})
+        return res.status(500).json({msg: "error while signinup"})
     }
 }
 
@@ -43,7 +47,7 @@ export const ownerSignin = async(req,res) =>{
     try {
         const success = ownerSigninValidator.safeParse(body)
         if(!success.success){
-            return res.status(403).json({msg: "data not in format"})
+            return res.status(400).json({msg: "data not in format"})
         }
         const response = await owner.findOne({
             email: body.email,
@@ -51,45 +55,39 @@ export const ownerSignin = async(req,res) =>{
         if(!response || response == null){
             return res.status(401).json({msg: "owner not found"})
         }
-        const compare = bcrypt.compareSync(body.password,response.password)
+        const compare = await verifyPassword(body.password, response.password)
         if(!compare){
             return res.status(401).json({msg: "incorrect password"})
         }
-        const token = jwt.sign(response._id.toHexString(),env.SECRET_KEY)
+        const token = signToken(response._id, ROLES.OWNER)
         res.json({
             ownername: response.name,
             token: token
         })
-        
+
     } catch (error) {
         console.log("error while signing up",error)
-        res.status(402).json({msg: "error while signing up"})
+        res.status(500).json({msg: "error while signing up"})
     }
 }
 
 export const hotelBookings = async(req,res)=>{
     try {
-        const hotels =  await hotel.find({
-            createdBy: req.userId
-        })
-        let books = []
-        for(let item = 0;item<hotels.length;item++){
-            const booking = await bookings.find({hotelId: hotels[item]._id})
+        // All of the owner's hotels, including removed ones, so their bookings stay visible.
+        const hotels = await hotel.find({ createdBy: req.userId }).select("_id").lean()
+        const books = await bookings.find({ hotelId: { $in: hotels.map((h) => h._id) } })
         .populate({
             path:'hotelId',
-            select:'name'
+            select:'name Image isDeleted'
         })
         .populate({
             path:'bookedBy',
-            select: 'name'
+            select: 'name email'
         })
-        
-         books = await books.concat(booking)
-        }
-        console.log(books)
+        .lean()
         res.json(books)
     } catch (error) {
         console.log("error while fetching booking of hotel",error)
-        res.json("error whil fetching booking of hotel")
+        res.status(500).json({msg: "error whil fetching booking of hotel"})
     }
 }

@@ -13,7 +13,8 @@ const ownerSchema = new mongoose.Schema({
     },
     email: {
         type: String,
-        required: true
+        required: true,
+        unique: true
     },
     idProof:{
         type: String,
@@ -27,4 +28,5 @@ const ownerSchema = new mongoose.Schema({
 })
 
 const owner = mongoose.model("owner",ownerSchema)
+owner.on("index", (err) => { if (err) console.error("owners index build failed (duplicate emails in the database?):", err.message) })
 export default owner
