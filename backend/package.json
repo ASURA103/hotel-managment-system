@@ -9,6 +9,11 @@
     "start": "node index.js",
     "server": "nodemon index.js"
   },
+  "config": {
+    "mongodbMemoryServer": {
+      "disablePostinstall": "1"
+    }
+  },
   "author": "",
   "license": "ISC",
   "dependencies": {
