@@ -78,7 +78,7 @@ export const hotelBookings = async(req,res)=>{
         const books = await bookings.find({ hotelId: { $in: hotels.map((h) => h._id) } })
         .populate({
             path:'hotelId',
-            select:'name Image isDeleted'
+            select:'name Image isDeleted area city state price'
         })
         .populate({
             path:'bookedBy',
