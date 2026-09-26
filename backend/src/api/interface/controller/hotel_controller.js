@@ -110,6 +110,19 @@ export const delHotel = async (req, res) => {
   }
 };
 
+// Public list for the landing page: newest hotels owners have added (removed ones hidden).
+const PUBLIC_HOTEL_FIELDS = "name area city state price Image unmarriedFriendly AcRoomA NonAcRoomA TotalAc TotalNonAc";
+export const listHotels = async (req, res) => {
+  const limit = Math.min(Math.max(Number(req.query.limit) || 6, 1), 24);
+  try {
+    const hotels = await hotel.find(notRemoved).sort({ _id: -1 }).limit(limit).select(PUBLIC_HOTEL_FIELDS).lean();
+    res.json(hotels);
+  } catch (error) {
+    console.log("error while listing hotels", error);
+    res.status(500).json({ msg: "error while listing hotels" });
+  }
+};
+
 export const searchHotel = async(req,res)=>{
   const body = req.body;
   const checkFromDate = new Date(body.fromDate)

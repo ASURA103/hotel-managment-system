@@ -348,6 +348,32 @@ describe("search", () => {
   });
 });
 
+// ── public hotel list (landing page) ────────────────────────────────────────
+describe("public hotel list", () => {
+  it("lists the newest hotels from the database, hiding removed ones", async () => {
+    const owner = await newOwner();
+    const kept = await insertHotel(owner.id, { name: unique("Listed ") });
+    const removed = await insertHotel(owner.id, { isDeleted: true, deletedAt: new Date() });
+    const newest = await insertHotel(owner.id, { name: unique("Newest ") });
+    const res = await api("GET", "/user/hotels?limit=24");
+    assert.equal(res.status, 200);
+    const got = ids(res.json);
+    assert.ok(got.includes(kept.id) && got.includes(newest.id));
+    assert.ok(!got.includes(removed.id));
+    assert.equal(got[0], newest.id, "newest first");
+    assert.equal(res.json[0].createdBy, undefined, "owner id is not exposed");
+    assert.equal(res.json[0].name, newest.name);
+  });
+
+  it("caps the page size", async () => {
+    const res = await api("GET", "/user/hotels?limit=1000");
+    assert.equal(res.status, 200);
+    assert.ok(res.json.length <= 24);
+    const def = await api("GET", "/user/hotels");
+    assert.ok(def.json.length <= 6);
+  });
+});
+
 // ── booking ─────────────────────────────────────────────────────────────────
 describe("booking", () => {
   it("the server computes the bill with the app's formula", async () => {
