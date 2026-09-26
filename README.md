@@ -28,7 +28,7 @@ Owners list and manage their properties; admins keep the platform in order.
 
 | Guests | Hotel owners | Admins |
 |---|---|---|
-| Browse hotels added by owners on the home page | Add hotels with a photo (stored on AWS S3) | View every hotel and every booking |
+| Browse hotels added by owners on the home page | Add hotels with a photo (stored on AWS S3, served through CloudFront) | View every hotel and every booking |
 | Search by city, area or hotel name, dates, rooms and AC / Non-AC | Edit a hotel's details or photo | Remove a hotel (bookings are kept) |
 | Only hotels with enough free rooms for those dates are shown | Remove a hotel without losing its booking history | Email a warning to a hotel's owner |
 | Book with a live price breakdown; the server computes the final bill | See every booking at their hotels, with guest contact details | Add admins (up to 3) |
@@ -41,7 +41,7 @@ Each role has its own sign-in; owners and admins get a dashboard. Every page wor
 - **Role-based access control.** Tokens carry the account's role, and a `requireRole` middleware guards every protected route, so a guest token can't reach owner or admin APIs. Owners can only edit or remove their own hotels. Legacy plain-text admin passwords are upgraded to bcrypt on their next sign-in.
 - **Availability engine.** Search and booking share one availability service. A single MongoDB aggregation counts the rooms already booked per hotel and room type for overlapping dates. In a local benchmark (300 hotels, 20,000 bookings) search went from **1,514 ms to 7 ms** and from **116 database operations to 3** per request.
 - **No overbooking, no client-side prices.** Bookings are refused with `409` when the rooms are gone, and the bill is always computed on the server.
-- **Safe image uploads.** Photos are type- and size-checked (JPG/PNG/WEBP/AVIF, 5 MB), streamed from memory to S3, and the hotel is saved only after the upload succeeds.
+- **Safe image uploads, fast delivery.** Photos are type- and size-checked (JPG/PNG/WEBP/AVIF, 5 MB), streamed from memory to S3, and the hotel is saved only after the upload succeeds. Guests load them through the CloudFront CDN.
 - **Soft delete.** Removed hotels disappear from search and listings, but their bookings stay intact and are labelled "Hotel removed".
 - **Fast frontend.**
   - Route-level code splitting cut the main bundle from **479 kB to 243 kB**.
@@ -68,6 +68,8 @@ flowchart LR
   C --> M[(MongoDB<br/>Mongoose)]
   S --> M
   C --> S3[(AWS S3<br/>hotel photos)]
+  S3 --> CF[CloudFront CDN]
+  CF -- "photos" --> B
   C --> E[Nodemailer<br/>owner warnings]
 ```
 
@@ -79,7 +81,7 @@ Frontend on **Vercel**, API on **Render**. For local development, **Docker Compo
 |---|---|
 | Frontend | React 18, Vite 6, React Router 7, Redux Toolkit, Axios, Tailwind CSS 3, GSAP, Sonner |
 | Backend | Node.js 22, Express 4, Mongoose 9, JSON Web Tokens, bcryptjs, Zod, Multer, Nodemailer |
-| Storage | MongoDB, AWS S3 (MinIO locally) |
+| Storage | MongoDB, AWS S3 + CloudFront CDN (MinIO locally) |
 | DevOps | Docker, Docker Compose, nginx, Vercel, Render |
 
 ## API
@@ -148,7 +150,7 @@ npm run dev
 | `MONGO_URL` | yes | MongoDB connection string |
 | `SECRET_KEY` | yes | Signs login tokens |
 | `AWS`, `AWS_SK` | yes | S3 access key id / secret |
-| `CLOUD_DOMAIN` | yes | Public base URL for hotel photos |
+| `CLOUD_DOMAIN` | yes | Public base URL for hotel photos (the CloudFront distribution, e.g. `https://xxxx.cloudfront.net`) |
 | `MAILER_ID`, `MAILER_PASS` | yes | Gmail account and app password for warning emails |
 | `PORT` | no | Defaults to `8080` |
 | `AWS_REGION`, `S3_BUCKET` | no | Default `ap-south-1` and `projects012` |
