@@ -1,30 +1,63 @@
-import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { B_URL } from "../../config.js";
 import { toast, Toaster } from "sonner";
 import axios from "axios";
+import { IoLocationOutline } from "react-icons/io5";
+
+import Navbar from "../Components/Navbar.jsx";
+import HotelImage from "../Components/ui/HotelImage.jsx";
+import { formatPrice } from "../lib/format.js";
+import { errorMessage } from "../lib/api.js";
+import { getRole, getToken } from "../lib/session.js";
+
+const DAY_MS = 1000 * 60 * 60 * 24;
+
+// Same rule the server uses: a same-day stay counts as one night's price.
+function calculateBill(price, rooms, fromDate, toDate) {
+  if (!fromDate || !toDate) return "";
+  const from = new Date(fromDate);
+  const to = new Date(toDate);
+  if (to < from) return "";
+  const days = (to - from) / DAY_MS;
+  return days === 0 ? price * rooms : days * price * rooms;
+}
 
 const Book = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const hotel = location.state;
-
   const today = new Date().toISOString().split("T")[0];
+  const search = hotel?.search || {};
 
   const [formData, setFormData] = useState({
-    fromDate: "",
-    toDate: "",
-    rooms: 1,
-    bill: "",
-    RoomType: "",
-    hotelId: hotel._id,
+    fromDate: search.fromDate || "",
+    toDate: search.toDate || "",
+    rooms: search.rooms || 1,
+    RoomType: search.RoomType || "",
+    hotelId: hotel?._id,
   });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!localStorage.getItem("token")) {
+    if (!getToken() || getRole() !== "user") {
       navigate("/user/auth");
     }
   }, [navigate]);
+
+  const price = Number(hotel?.price) || 0;
+  const rooms = Number(formData.rooms) || 0;
+  const bill = useMemo(
+    () => calculateBill(price, rooms, formData.fromDate, formData.toDate),
+    [price, rooms, formData.fromDate, formData.toDate],
+  );
+  const nights =
+    formData.fromDate && formData.toDate
+      ? Math.max((new Date(formData.toDate) - new Date(formData.fromDate)) / DAY_MS, 0)
+      : 0;
+
+  // Opened without choosing a hotel (e.g. /book typed directly): go back to searching.
+  if (!hotel?._id) return <Navigate to="/" replace />;
 
   function handleChange(e, type) {
     setFormData({
@@ -35,472 +68,98 @@ const Book = () => {
 
   async function handleSubmit(e) {
     e.preventDefault();
-
+    setSubmitting(true);
     try {
-      await axios.post(`${B_URL}/user/bookH`, formData, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
+      // The server recomputes the bill; it is sent for compatibility only.
+      await axios.post(`${B_URL}/user/bookH`, { ...formData, bill });
       toast.success("Hotel Booked Successfully!");
-
       setTimeout(() => {
         navigate("/");
       }, 2000);
     } catch (error) {
-      toast.error("Error while booking the hotel.");
+      toast.error(errorMessage(error, "Error while booking the hotel."));
       console.error("Error:", error);
+      setSubmitting(false);
     }
   }
 
-  useEffect(() => {
-    calculateBill();
-  }, [formData.fromDate, formData.toDate, formData.rooms]);
-
-  const calculateBill = () => {
-    if (formData.fromDate && formData.toDate) {
-      const fromDate = new Date(formData.fromDate);
-      const toDate = new Date(formData.toDate);
-
-      if (toDate >= fromDate) {
-        const days =
-          (toDate - fromDate) / (1000 * 60 * 60 * 24);
-
-        const bill =
-          days === 0
-            ? hotel.price * formData.rooms
-            : days * hotel.price * formData.rooms;
-
-        setFormData((prevFormData) => ({
-          ...prevFormData,
-          bill: bill,
-        }));
-      }
-    }
-  };
-
   return (
-    <div
-      className="
-      min-h-screen
-      w-full
+    <div className="min-h-screen bg-bg">
+      <Navbar />
+      <Toaster richColors position="top-center" />
 
-      bg-gradient-to-br
-      from-sky-500
-      via-blue-600
-      to-indigo-700
-
-      dark:from-slate-950
-      dark:via-slate-900
-      dark:to-slate-950
-
-      py-8
-      px-4
-
-      transition-all
-      duration-300
-    "
-    >
-      <div
-        className="
-        max-w-4xl
-        mx-auto
-
-        bg-white
-        dark:bg-slate-900
-
-        p-5
-        md:p-8
-
-        rounded-[32px]
-
-        shadow-2xl
-
-        border
-        border-white/20
-        dark:border-slate-700
-
-        backdrop-blur-md
-
-        space-y-7
-
-        transition-all
-        duration-300
-      "
-      >
-        <h1
-          className="
-          text-center
-
-          text-3xl
-          md:text-5xl
-
-          font-bold
-
-          text-slate-800
-          dark:text-white
-        "
-        >
-          Book Your Stay at {hotel.name}
-        </h1>
-
-        <div className="flex justify-center">
-          <img
-            src={hotel.Image}
-            alt={hotel.name}
-            className="
-            w-full
-
-            h-[250px]
-            md:h-[420px]
-
-            object-cover
-
-            rounded-3xl
-
-            shadow-2xl
-
-            hover:scale-[1.02]
-
-            transition-all
-            duration-500
-          "
-          />
-        </div>
-
-        <div
-          className="
-          text-center
-
-          text-base
-          md:text-lg
-
-          text-slate-700
-          dark:text-slate-300
-
-          space-y-2
-        "
-        >
-          <p>
-            <strong>Area:</strong> {hotel.area}
+      <main className="container-page grid gap-8 pb-16 pt-28 lg:grid-cols-[1.1fr_.9fr]">
+        {/* Hotel */}
+        <section className="animate-fade-up">
+          <p className="eyebrow">Book your stay</p>
+          <h1 className="title-section mt-2">{hotel.name}</h1>
+          <p className="mt-2 flex items-center gap-1.5 text-muted">
+            <IoLocationOutline className="text-brass" />
+            {[hotel.area, hotel.city, hotel.state].filter(Boolean).join(", ")}
           </p>
 
-          <p>
-            <strong>City:</strong> {hotel.city}
-          </p>
+          <div className="card mt-6 overflow-hidden">
+            <HotelImage src={hotel.Image} alt={hotel.name} eager className="aspect-[16/10] w-full" />
+            <dl className="grid grid-cols-2 gap-4 p-6 text-sm sm:grid-cols-4">
+              <div><dt className="field-label">Area</dt><dd className="mt-1 text-ink">{hotel.area}</dd></div>
+              <div><dt className="field-label">City</dt><dd className="mt-1 text-ink">{hotel.city}</dd></div>
+              <div><dt className="field-label">State</dt><dd className="mt-1 text-ink">{hotel.state}</dd></div>
+              <div><dt className="field-label">Price</dt><dd className="mt-1 text-ink">{formatPrice(hotel.price)} per night</dd></div>
+            </dl>
+          </div>
+        </section>
 
-          <p>
-            <strong>State:</strong> {hotel.state}
-          </p>
+        {/* Booking form */}
+        <section className="lg:pt-24">
+          <form onSubmit={handleSubmit} className="card space-y-5 p-6 animate-fade-up md:p-8" style={{ animationDelay: "80ms" }}>
+            <h2 className="font-display text-2xl text-ink">Your booking</h2>
 
-          <p>
-            <strong>Price:</strong> ₹{hotel.price} per night
-          </p>
-        </div>
-
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-              <label
-                htmlFor="fromDate"
-                className="block text-sm font-medium text-slate-700 dark:text-slate-300"
-              >
-                Check-in Date
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <label htmlFor="fromDate" className="flex flex-col gap-1.5">
+                <span className="field-label">Check-in date</span>
+                <input type="date" id="fromDate" min={today} value={formData.fromDate} required className="field" onChange={(e) => handleChange(e, "fromDate")} />
               </label>
-
-              <input
-                type="date"
-                id="fromDate"
-                min={today}
-                className="
-                w-full
-
-                p-3
-
-                mt-2
-
-                border
-
-                border-slate-300
-                dark:border-slate-700
-
-                rounded-xl
-
-                bg-white
-                dark:bg-slate-800
-
-                text-slate-800
-                dark:text-white
-
-                shadow-sm
-
-                focus:outline-none
-
-                focus:ring-2
-                focus:ring-blue-500
-
-                transition-all
-                duration-300
-              "
-                onChange={(e) =>
-                  handleChange(e, "fromDate")
-                }
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="toDate"
-                className="block text-sm font-medium text-slate-700 dark:text-slate-300"
-              >
-                Check-out Date
+              <label htmlFor="toDate" className="flex flex-col gap-1.5">
+                <span className="field-label">Check-out date</span>
+                <input type="date" id="toDate" min={formData.fromDate || today} value={formData.toDate} required className="field" onChange={(e) => handleChange(e, "toDate")} />
               </label>
-
-              <input
-                type="date"
-                id="toDate"
-                min={today}
-                className="
-                w-full
-
-                p-3
-
-                mt-2
-
-                border
-
-                border-slate-300
-                dark:border-slate-700
-
-                rounded-xl
-
-                bg-white
-                dark:bg-slate-800
-
-                text-slate-800
-                dark:text-white
-
-                shadow-sm
-
-                focus:outline-none
-
-                focus:ring-2
-                focus:ring-blue-500
-
-                transition-all
-                duration-300
-              "
-                onChange={(e) =>
-                  handleChange(e, "toDate")
-                }
-              />
-            </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="rooms"
-              className="block text-sm font-medium text-slate-700 dark:text-slate-300"
-            >
-              Number of Rooms
-            </label>
-
-            <input
-              type="number"
-              id="rooms"
-              min="1"
-              defaultValue="1"
-              className="
-              w-full
-
-              p-3
-
-              mt-2
-
-              border
-
-              border-slate-300
-              dark:border-slate-700
-
-              rounded-xl
-
-              bg-white
-              dark:bg-slate-800
-
-              text-slate-800
-              dark:text-white
-
-              shadow-sm
-
-              focus:outline-none
-
-              focus:ring-2
-              focus:ring-blue-500
-
-              transition-all
-              duration-300
-            "
-              onChange={(e) =>
-                handleChange(e, "rooms")
-              }
-            />
-          </div>
-
-          <div className="relative">
-            <label
-              htmlFor="bill"
-              className="block text-sm font-medium text-slate-700 dark:text-slate-300"
-            >
-              Total Bill
-            </label>
-
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <span className="text-slate-500 dark:text-slate-300 text-xl mt-7">
-                ₹
-              </span>
             </div>
 
-            <input
-              type="number"
-              id="bill"
-              value={formData.bill}
-              readOnly
-              className="
-              w-full
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <label htmlFor="rooms" className="flex flex-col gap-1.5">
+                <span className="field-label">Number of rooms</span>
+                <input type="number" id="rooms" min="1" value={formData.rooms} required className="field" onChange={(e) => handleChange(e, "rooms")} />
+              </label>
+              <label htmlFor="RoomType" className="flex flex-col gap-1.5">
+                <span className="field-label">Room type</span>
+                <select id="RoomType" value={formData.RoomType} required className="field" onChange={(e) => handleChange(e, "RoomType")}>
+                  <option value="">Select room type</option>
+                  <option value="AC" disabled={hotel.AcRoomA === false}>AC</option>
+                  <option value="NonAc" disabled={hotel.NonAcRoomA === false}>Non-AC</option>
+                </select>
+              </label>
+            </div>
 
-              pl-8
+            <div className="rounded-2xl border border-line bg-surface2/60 p-5">
+              <div className="flex justify-between text-sm text-muted">
+                <span>
+                  {formatPrice(price)} × {rooms || 0} {rooms === 1 ? "room" : "rooms"} × {Math.max(nights, 1)} {nights > 1 ? "nights" : "night"}
+                </span>
+              </div>
+              <div className="mt-3 flex items-end justify-between">
+                <span className="field-label" id="bill">Total bill</span>
+                <span className="font-display text-3xl text-ink" aria-labelledby="bill">
+                  {bill === "" ? "—" : formatPrice(bill)}
+                </span>
+              </div>
+            </div>
 
-              p-3
-
-              mt-2
-
-              border
-
-              border-slate-300
-              dark:border-slate-700
-
-              rounded-xl
-
-              bg-white
-              dark:bg-slate-800
-
-              text-slate-800
-              dark:text-white
-
-              shadow-sm
-
-              focus:outline-none
-
-              focus:ring-2
-              focus:ring-blue-500
-
-              transition-all
-              duration-300
-            "
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="RoomType"
-              className="block text-sm font-medium text-slate-700 dark:text-slate-300"
-            >
-              Room Type
-            </label>
-
-            <select
-              id="RoomType"
-              className="
-              w-full
-
-              p-3
-
-              mt-2
-
-              border
-
-              border-slate-300
-              dark:border-slate-700
-
-              rounded-xl
-
-              bg-white
-              dark:bg-slate-800
-
-              text-slate-800
-              dark:text-white
-
-              shadow-sm
-
-              focus:outline-none
-
-              focus:ring-2
-              focus:ring-blue-500
-
-              transition-all
-              duration-300
-            "
-              onChange={(e) =>
-                handleChange(e, "RoomType")
-              }
-            >
-              <option value="">
-                Select Room Type
-              </option>
-
-              <option value="AC">AC</option>
-
-              <option value="NonAc">
-                NonAC
-              </option>
-            </select>
-          </div>
-
-          <div className="text-center">
-            <button
-              type="submit"
-              className="
-              w-full
-
-              py-4
-
-              bg-gradient-to-r
-
-              from-blue-600
-              to-cyan-500
-
-              hover:from-blue-700
-              hover:to-cyan-600
-
-              text-white
-
-              font-bold
-
-              rounded-2xl
-
-              shadow-xl
-
-              hover:shadow-2xl
-
-              hover:scale-[1.02]
-
-              transition-all
-              duration-300
-
-              focus:outline-none
-
-              focus:ring-4
-              focus:ring-blue-300
-            "
-            >
-              Confirm Booking
+            <button type="submit" disabled={submitting} className="btn btn-primary w-full">
+              {submitting ? "Booking…" : "Confirm booking"}
             </button>
-          </div>
-        </form>
-      </div>
-
-      <Toaster />
+          </form>
+        </section>
+      </main>
     </div>
   );
 };

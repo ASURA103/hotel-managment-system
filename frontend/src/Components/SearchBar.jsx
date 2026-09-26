@@ -1,22 +1,32 @@
 import React, { useState } from "react";
 import { FiSearch } from "react-icons/fi";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { updateItem } from "../lib/store.js";
 
-const SearchBar = () => {
+const Field = ({ label, htmlFor, children, className = "" }) => (
+  <label htmlFor={htmlFor} className={`flex min-w-0 flex-col gap-1.5 ${className}`}>
+    <span className="field-label">{label}</span>
+    {children}
+  </label>
+);
+
+// The hotel search form. `compact` is the version shown above search results
+// (SearchBar1 re-exports it); it starts from the current search.
+const SearchBar = ({ compact = false }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const current = useSelector((state) => state.updateItem);
 
   const today = new Date().toISOString().split("T")[0];
 
-  const [values, setValues] = useState({
-    value: "Mohali",
-    fromDate: null,
-    toDate: null,
-    roomType: null,
-    rooms: 1,
-  });
+  const [values, setValues] = useState(() => ({
+    value: (compact && current.value) || "Mohali",
+    fromDate: (compact && current.fromDate) || "",
+    toDate: (compact && current.toDate) || "",
+    RoomType: (compact && current.RoomType) || "",
+    rooms: (compact && current.rooms) || 1,
+  }));
 
   function handleChange(e, type) {
     setValues((prev) => ({
@@ -32,201 +42,78 @@ const SearchBar = () => {
   }
 
   return (
-    <div className="z-20 flex justify-center mt-16 px-4 md:px-0">
+    <div className={`z-20 flex justify-center px-4 md:px-0 ${compact ? "" : "mt-16"}`}>
       <form
-        className="
-          w-full max-w-5xl
-          bg-white dark:bg-gray-800
-          p-6 md:p-8
-          rounded-2xl
-          shadow-2xl
-          border border-gray-200 dark:border-gray-700
-          transition-all duration-300
-        "
         onSubmit={handleSubmit}
+        className={`card w-full max-w-5xl animate-fade-up ${compact ? "p-4 md:p-5" : "p-5 shadow-lift md:p-7"}`}
       >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Location Input */}
-          <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-              Location
-            </label>
+        {!compact && <p className="eyebrow mb-4">Find your stay</p>}
 
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr_.7fr_.9fr_auto] lg:items-end">
+          <Field label="Destination" htmlFor={compact ? "location-c" : "location"}>
             <input
               type="text"
-              id="location"
+              id={compact ? "location-c" : "location"}
               value={values.value}
               onChange={(e) => handleChange(e, "value")}
-              placeholder="Enter city or hotel name"
-              className="
-                mt-2 p-3
-                border border-gray-300 dark:border-gray-600
-                rounded-xl
-
-                bg-white dark:bg-gray-900
-                text-gray-800 dark:text-white
-                placeholder-gray-400 dark:placeholder-gray-500
-
-                focus:outline-none
-                focus:ring-2 focus:ring-blue-500
-                focus:border-transparent
-
-                transition-all duration-300
-              "
+              placeholder="City, area or hotel"
+              required
+              className="field"
             />
-          </div>
+          </Field>
 
-          {/* From Date Input */}
-          <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-              From
-            </label>
-
+          <Field label="Check-in" htmlFor={compact ? "fromDate-c" : "fromDate"}>
             <input
               type="date"
-              id="fromDate"
+              id={compact ? "fromDate-c" : "fromDate"}
               min={today}
               value={values.fromDate}
               onChange={(e) => handleChange(e, "fromDate")}
-              className="
-                mt-2 p-3
-                border border-gray-300 dark:border-gray-600
-                rounded-xl
-
-                bg-white dark:bg-gray-900
-                text-gray-800 dark:text-white
-
-                focus:outline-none
-                focus:ring-2 focus:ring-blue-500
-                focus:border-transparent
-
-                transition-all duration-300
-              "
+              required
+              className="field"
             />
-          </div>
+          </Field>
 
-          {/* To Date Input */}
-          <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-              To
-            </label>
-
+          <Field label="Check-out" htmlFor={compact ? "toDate-c" : "toDate"}>
             <input
               type="date"
-              id="toDate"
-              min={today}
+              id={compact ? "toDate-c" : "toDate"}
+              min={values.fromDate || today}
               value={values.toDate}
               onChange={(e) => handleChange(e, "toDate")}
-              className="
-                mt-2 p-3
-                border border-gray-300 dark:border-gray-600
-                rounded-xl
-
-                bg-white dark:bg-gray-900
-                text-gray-800 dark:text-white
-
-                focus:outline-none
-                focus:ring-2 focus:ring-blue-500
-                focus:border-transparent
-
-                transition-all duration-300
-              "
+              required
+              className="field"
             />
-          </div>
+          </Field>
 
-          {/* Number of Rooms Input */}
-          <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-              Rooms
-            </label>
-
+          <Field label="Rooms" htmlFor={compact ? "rooms-c" : "rooms"}>
             <input
               type="number"
-              id="rooms"
+              id={compact ? "rooms-c" : "rooms"}
               min={1}
               value={values.rooms}
               onChange={(e) => handleChange(e, "rooms")}
-              className="
-                mt-2 p-3
-                border border-gray-300 dark:border-gray-600
-                rounded-xl
-
-                bg-white dark:bg-gray-900
-                text-gray-800 dark:text-white
-
-                focus:outline-none
-                focus:ring-2 focus:ring-blue-500
-                focus:border-transparent
-
-                transition-all duration-300
-              "
+              className="field"
             />
-          </div>
+          </Field>
 
-          {/* Room Type Select */}
-          <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-              Room Type
-            </label>
-
+          <Field label="Room type" htmlFor={compact ? "RoomType-c" : "RoomType"}>
             <select
-              id="roomType"
-              value={values.roomType}
-              onChange={(e) => handleChange(e, "roomType")}
-              className="
-                mt-2 p-3
-                border border-gray-300 dark:border-gray-600
-                rounded-xl
-
-                bg-white dark:bg-gray-900
-                text-gray-800 dark:text-white
-
-                focus:outline-none
-                focus:ring-2 focus:ring-blue-500
-                focus:border-transparent
-
-                transition-all duration-300
-              "
+              id={compact ? "RoomType-c" : "RoomType"}
+              value={values.RoomType}
+              onChange={(e) => handleChange(e, "RoomType")}
+              className="field"
             >
               <option value="">Select</option>
               <option value="AC">AC</option>
               <option value="NonAc">Non-AC</option>
             </select>
-          </div>
+          </Field>
 
-          {/* Submit Button */}
-          <div className="flex items-end sm:col-span-2 lg:col-span-1">
-            <button
-              type="submit"
-              onClick={handleSubmit}
-              className="
-                w-full
-
-                bg-blue-600 dark:bg-blue-500
-                hover:bg-blue-700 dark:hover:bg-blue-600
-
-                text-white
-
-                py-3 px-4
-
-                rounded-xl
-
-                flex items-center justify-center
-
-                font-semibold
-
-                shadow-lg hover:shadow-xl
-
-                transition-all duration-300
-
-                focus:outline-none
-                focus:ring-2 focus:ring-blue-500
-              "
-            >
-              <FiSearch className="mr-2 text-xl" />
-              Search
-            </button>
-          </div>
+          <button type="submit" className="btn btn-primary h-11 w-full sm:col-span-2 lg:col-span-1 lg:w-auto">
+            <FiSearch size={16} />
+            Search
+          </button>
         </div>
       </form>
     </div>

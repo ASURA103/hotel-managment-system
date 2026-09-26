@@ -1,331 +1,140 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import axios from "axios";
+import { toast, Toaster } from "sonner";
+import { IoLocationOutline } from "react-icons/io5";
 import { B_URL } from "../../config.js";
-import { TbDatabaseEdit } from "react-icons/tb";
-import { FcDeleteDatabase } from "react-icons/fc";
+import HotelImage from "../Components/ui/HotelImage.jsx";
+import PageHeader from "../Components/ui/PageHeader.jsx";
+import EmptyState from "../Components/ui/EmptyState.jsx";
+import { formatPrice } from "../lib/format.js";
+import { errorMessage } from "../lib/api.js";
 
-const HotelList = () => {
+const Fact = ({ label, value }) => (
+  <div className="flex justify-between gap-3 text-sm">
+    <span className="text-muted">{label}</span>
+    <span className="text-right text-ink">{value}</span>
+  </div>
+);
+const yesNo = (v) => (v ? "Yes" : "No");
+
+const HotelList = ({ onEdit }) => {
   const [hotels, setHotels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [confirmId, setConfirmId] = useState(null);
 
-  useEffect(() => {
-    const fetchHotels = async () => {
-      try {
-        const response = await axios.get(`${B_URL}/owner/gethotels`, {
-          headers: {
-            authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-
-        setHotels(response.data);
-      } catch (error) {
-        console.error("Error fetching hotels", error);
-      }
-    };
-
-    fetchHotels();
+  const fetchHotels = useCallback(async () => {
+    try {
+      const response = await axios.get(`${B_URL}/owner/gethotels`);
+      setHotels(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error("Error fetching hotels", error);
+      toast.error(errorMessage(error, "Error fetching hotels"));
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  console.log("hotels", hotels);
+  useEffect(() => {
+    fetchHotels();
+  }, [fetchHotels]);
 
-  const delHotel = async () => {
+  const delHotel = async (id) => {
     try {
-      await axios.delete(`${B_URL}/owner/delHotel`, {
-        headers: {
-          authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      const response = await axios.get(`${B_URL}/owner/gethotels`, {
-        headers: {
-          authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      setHotels(response.data);
+      await axios.delete(`${B_URL}/owner/delHotel`, { data: { id } });
+      toast.success("Hotel deleted");
+      setConfirmId(null);
+      await fetchHotels();
     } catch (error) {
       console.error("Error while deleting hotel", error);
+      toast.error(errorMessage(error, "Error while deleting hotel"));
     }
   };
 
-  const Edit = (hotel) => {
-    setCurrentHotel(hotel);
-    setFormData(hotel);
-
-    console.log("formData", formData);
-
-    setIsDialogOpen(true);
-  };
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-
-      [e.target.name]: e.target.value,
-    });
-  };
-
   return (
-    <div
-      className="
-      min-h-screen
+    <div>
+      <Toaster richColors position="top-center" />
+      <PageHeader
+        eyebrow="Your properties"
+        title="My Hotels"
+        subtitle={loading ? "Loading your hotels…" : `Total Hotels: ${hotels.length}`}
+      />
 
-      p-4 md:p-8
-
-      bg-gradient-to-br
-      from-sky-50
-      via-white
-      to-cyan-50
-
-      dark:from-slate-950
-      dark:via-slate-900
-      dark:to-slate-950
-    "
-    >
-      {/* Heading */}
-
-      <div className="mb-8">
-        <h1 className="text-4xl font-extrabold text-slate-800 dark:text-white">
-          My Hotels
-        </h1>
-
-        <p className="mt-2 text-gray-500 dark:text-gray-400">
-          Total Hotels :
-          <span className="font-bold text-blue-600 ml-2">
-            {hotels.length}
-          </span>
-        </p>
-      </div>
-
-      {/* Hotels */}
-
-      <div
-        className="
-        grid
-
-        grid-cols-1
-        md:grid-cols-2
-        xl:grid-cols-3
-
-        gap-8
-      "
-      >
-        {hotels.map((hotel) => (
-          <div
-            key={hotel._id}
-            className="
-            bg-white
-            dark:bg-slate-900
-
-            rounded-3xl
-
-            overflow-hidden
-
-            shadow-xl
-
-            border
-            border-gray-200
-            dark:border-slate-700
-
-            hover:-translate-y-2
-            hover:shadow-2xl
-
-            transition-all
-            duration-300
-          "
-          >
-            {/* Image */}
-
-            <div className="overflow-hidden">
-              <img
-                src={hotel.Image}
-                alt={hotel.name}
-                className="
-                w-full
-
-                h-64
-
-                object-cover
-
-                hover:scale-110
-
-                transition-all
-                duration-500
-              "
-              />
+      {loading && (
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 3 }, (_, i) => (
+            <div key={i} className="card overflow-hidden">
+              <div className="skeleton h-56 rounded-none" />
+              <div className="space-y-3 p-6"><div className="skeleton h-6 w-2/3" /><div className="skeleton h-24 w-full" /></div>
             </div>
+          ))}
+        </div>
+      )}
 
-            {/* Top Section */}
+      {!loading && hotels.length === 0 && (
+        <EmptyState title="No Hotels Added Yet" text="Add your first hotel to start receiving bookings." />
+      )}
 
-            <div className="p-5">
-              <div className="flex justify-between items-center mb-5">
-                {/* Edit */}
+      {!loading && hotels.length > 0 && (
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+          {hotels.map((hotel, i) => (
+            <article
+              key={hotel._id}
+              className="card card-hover flex flex-col overflow-hidden animate-fade-up"
+              style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}
+            >
+              <HotelImage src={hotel.Image} alt={hotel.name} className="h-56 w-full" />
 
-                <TbDatabaseEdit
-                  onClick={() => Edit(hotel)}
-                  className="
-                  text-4xl
+              <div className="flex flex-1 flex-col gap-5 p-6">
+                <div>
+                  <h2 className="font-display text-2xl leading-tight text-ink">{hotel.name}</h2>
+                  <p className="mt-1.5 flex items-center gap-1.5 text-sm text-muted">
+                    <IoLocationOutline className="text-brass" />
+                    {hotel.area}, {hotel.city}, {hotel.state}
+                  </p>
+                  <p className="mt-3 text-lg font-semibold text-ink">
+                    {formatPrice(hotel.price)} <span className="text-sm font-normal text-muted">/ Night</span>
+                  </p>
+                </div>
 
-                  text-amber-500
+                <div className="space-y-2">
+                  <Fact label="Unmarried Friendly" value={yesNo(hotel.unmarriedFriendly)} />
+                  <Fact label="AC Rooms Available" value={yesNo(hotel.AcRoomA)} />
+                  <Fact label="Non-AC Rooms Available" value={yesNo(hotel.NonAcRoomA)} />
+                </div>
 
-                  cursor-pointer
-
-                  hover:scale-125
-
-                  transition-all
-                  duration-300
-                "
-                />
-
-                {/* Hotel Name */}
-
-                <h2
-                  className="
-                  text-2xl
-
-                  font-bold
-
-                  text-center
-
-                  text-slate-800
-                  dark:text-white
-                "
-                >
-                  {hotel.name}
-                </h2>
-
-                {/* Delete */}
-
-                <FcDeleteDatabase
-                  onClick={delHotel}
-                  className="
-                  text-4xl
-
-                  cursor-pointer
-
-                  hover:scale-125
-
-                  transition-all
-                  duration-300
-                "
-                />
-              </div>
-
-              {/* Hotel Details */}
-
-              <div
-                className="
-                space-y-2
-
-                text-slate-700
-                dark:text-slate-300
-
-                font-medium
-              "
-              >
-                <p>
-                  <span className="font-bold">Area:</span> {hotel.area}
-                </p>
-
-                <p>
-                  <span className="font-bold">City:</span> {hotel.city}
-                </p>
-
-                <p>
-                  <span className="font-bold">State:</span> {hotel.state}
-                </p>
-
-                <p className="text-green-600 font-bold text-lg">
-                  ₹ {hotel.price}
-                  <span className="text-sm text-gray-500 ml-1">
-                    / Night
-                  </span>
-                </p>
-
-                <p>
-                  <span className="font-bold">
-                    Unmarried Friendly:
-                  </span>{" "}
-                  {hotel.unmarriedFriendly ? "Yes ✅" : "No ❌"}
-                </p>
-
-                <p>
-                  <span className="font-bold">
-                    AC Rooms Available:
-                  </span>{" "}
-                  {hotel.AcRoomA ? "Yes ✅" : "No ❌"}
-                </p>
-
-                <p>
-                  <span className="font-bold">
-                    Non-AC Rooms Available:
-                  </span>{" "}
-                  {hotel.NonAcRoomA ? "Yes ✅" : "No ❌"}
-                </p>
-
-                <div className="flex gap-4 pt-3">
-                  <div
-                    className="
-                    flex-1
-
-                    bg-sky-50
-                    dark:bg-slate-800
-
-                    rounded-2xl
-
-                    p-3
-
-                    text-center
-                  "
-                  >
-                    <p className="text-sm text-gray-500">
-                      Total AC
-                    </p>
-
-                    <p className="font-bold text-xl text-blue-600">
-                      {hotel.TotalAc}
-                    </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-xl bg-surface2/70 p-3 text-center">
+                    <p className="field-label">Total AC</p>
+                    <p className="mt-1 font-display text-2xl text-ink">{hotel.TotalAc}</p>
                   </div>
-
-                  <div
-                    className="
-                    flex-1
-
-                    bg-sky-50
-                    dark:bg-slate-800
-
-                    rounded-2xl
-
-                    p-3
-
-                    text-center
-                  "
-                  >
-                    <p className="text-sm text-gray-500">
-                      Total Non AC
-                    </p>
-
-                    <p className="font-bold text-xl text-purple-600">
-                      {hotel.TotalNonAc}
-                    </p>
+                  <div className="rounded-xl bg-surface2/70 p-3 text-center">
+                    <p className="field-label">Total Non AC</p>
+                    <p className="mt-1 font-display text-2xl text-ink">{hotel.TotalNonAc}</p>
                   </div>
                 </div>
+
+                <div className="mt-auto flex gap-3 border-t border-line pt-4">
+                  <button type="button" className="btn btn-outline btn-sm flex-1" onClick={() => onEdit && onEdit(hotel)}>
+                    Edit
+                  </button>
+                  {confirmId === hotel._id ? (
+                    <>
+                      <button type="button" className="btn btn-danger btn-sm flex-1" onClick={() => delHotel(hotel._id)}>
+                        Confirm delete
+                      </button>
+                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => setConfirmId(null)}>
+                        Keep
+                      </button>
+                    </>
+                  ) : (
+                    <button type="button" className="btn btn-ghost btn-sm flex-1 text-danger hover:bg-danger/10" onClick={() => setConfirmId(hotel._id)}>
+                      Delete
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Empty State */}
-
-      {hotels.length === 0 && (
-        <div className="text-center mt-20">
-          <h1 className="text-3xl font-bold text-slate-700 dark:text-white">
-            No Hotels Added Yet
-          </h1>
-
-          <p className="mt-3 text-gray-500 dark:text-gray-400">
-            Add your first hotel to start receiving bookings.
-          </p>
+            </article>
+          ))}
         </div>
       )}
     </div>

@@ -9,6 +9,5 @@ export default function createRouter(){
     userRouter(router)
     adminRouter(router) 
     ownerRouter(router)
-    adminRouter(router)
     return router
 }

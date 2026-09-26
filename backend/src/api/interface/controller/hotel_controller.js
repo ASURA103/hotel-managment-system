@@ -2,72 +2,85 @@ import hotel from "../../config/schema/hotel.schema.js";
 import bookings from "../../config/schema/booking.schema.js";
 import { fileUpload } from "../model/hotel.model.js";
 import env from "../../../infrastructure/env.js";
+import { bookingValidator, hotelUpdateValidator, hotelvalidator, idValidator } from "../../config/helper/validators.js";
+import { bookedRoomsByHotel, roomsLeft } from "../../services/availability.js";
+import { computeBill } from "../../services/pricing.js";
+
+const notRemoved = { isDeleted: { $ne: true } };
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export const addHotel = async (req, res) => {
   const body = req.body;
   const file = req.file;
-  console.log(file);
+  console.log(file && { fieldname: file.fieldname, originalname: file.originalname, mimetype: file.mimetype, size: file.size });
   console.log(body);
-  console.log(env.AWS)
-  console.log(env.AWS_SK)
+  // The AWS key values are never logged; only whether they are configured.
+  console.log("AWS credentials configured:", Boolean(env.AWS && env.AWS_SK));
+
+  const parsed = hotelvalidator.safeParse(body);
+  if (!parsed.success) {
+    return res.status(400).json({ msg: "Please fill in every hotel field correctly", errors: parsed.error.flatten().fieldErrors });
+  }
+  if (!file) {
+    return res.status(400).json({ msg: "Hotel image is required" });
+  }
 
   try {
     const upload = await fileUpload(file)
     const url =`${env.CLOUD_DOMAIN}/${upload.filename}`
-    const response = await hotel.create({
-      name: body.name,
-      area: body.area,
-      city: body.city,
-      state: body.state,
-      price: body.price,
-      unmarriedFriendly: body.unmarriedFriendly,
+    const data = parsed.data;
+    await hotel.create({
+      name: data.name,
+      area: data.area,
+      city: data.city,
+      state: data.state,
+      price: String(data.price),
+      unmarriedFriendly: data.unmarriedFriendly,
       Image: url,
-      AcRoomA: body.AcRoomA,
-      NonAcRoomA: body.NonAcRoomA,
-      TotalAc: body.TotalAc,
-      TotalNonAc: body.TotalNonAc,
+      AcRoomA: data.AcRoomA,
+      NonAcRoomA: data.NonAcRoomA,
+      TotalAc: data.TotalAc,
+      TotalNonAc: data.TotalNonAc,
       status: true,
       createdBy: req.userId,
     });
     res.json({ msg: "hotel added" });
   } catch (error) {
-    console.log(error);
-    return res.status(403).json({ msg: "error while adding hotel " });
+    console.log("error while adding hotel", error.message);
+    return res.status(500).json({ msg: "error while adding hotel " });
   }
 };
 
 export const updateHotel = async (req, res) => {
-  const body = req.body;
+  const parsed = hotelUpdateValidator.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ msg: "data not in format", errors: parsed.error.flatten().fieldErrors });
+  }
+  const { id, ...fields } = parsed.data;
+  const filter = { _id: id, createdBy: req.userId, ...notRemoved };
   try {
-    const response = await hotel.updateOne(
-      { createdBy: req.userId },
-      {
-        name: body.name,
-        area: body.area,
-        city: body.city,
-        state: body.state,
-        price: body.price,
-        unmarriedFriendly: body.unmarriedFriendly,
-        image: url,
-        AcRoomA: body.AcRoomA,
-        NonAcRoomA: body.NonAcRoomA,
-        TotalAc: body.TotalAc,
-        TotalNonAc: body.TotalNonAc,
-        status: body.status,
-        createdBy: req.userId,
-      }
-    );
-    res.json({ msg: "hotel updated" });
+    // Check ownership before uploading, so a refused edit never leaves an image in S3.
+    const existing = await hotel.findOne(filter).select("_id").lean();
+    if (!existing) {
+      return res.status(404).json({ msg: "hotel not found" });
+    }
+    if (fields.price !== undefined) fields.price = String(fields.price);
+    if (req.file) {
+      const upload = await fileUpload(req.file);
+      fields.Image = `${env.CLOUD_DOMAIN}/${upload.filename}`;
+    }
+    const updated = await hotel.findOneAndUpdate(filter, { $set: fields }, { new: true, runValidators: true }).lean();
+    res.json({ msg: "hotel updated", hotel: updated });
   } catch (error) {
-    console.log("updating hotel", error);
-    return res.status(401).json({ msg: "error while updating" });
+    console.log("updating hotel", error.message);
+    return res.status(500).json({ msg: "error while updating" });
   }
 };
 
 export const getHotels = async (req, res) => {
   try {
     const userId = req.userId;
-    const hotels = await hotel.find({ createdBy: userId });
+    const hotels = await hotel.find({ createdBy: userId, ...notRemoved }).lean();
     res.json(hotels);
   } catch (error) {
     console.log("Error retrieving hotels", error);
@@ -76,9 +89,20 @@ export const getHotels = async (req, res) => {
 };
 
 export const delHotel = async (req, res) => {
+  const parsed = idValidator.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ msg: "hotel id is required" });
+  }
   try {
     const userId = req.userId;
-    const hotels = await hotel.deleteOne({ createdBy: userId });
+    // Soft delete, only the owner's own hotel; bookings stay intact.
+    const result = await hotel.updateOne(
+      { _id: parsed.data.id, createdBy: userId, ...notRemoved },
+      { $set: { isDeleted: true, deletedAt: new Date() } },
+    );
+    if (!result.matchedCount) {
+      return res.status(404).json({ msg: "hotel not found" });
+    }
     res.json({ msg: " Hotel Deleted " });
   } catch (error) {
     console.log("Error  while Deleting Hotel", error);
@@ -86,74 +110,78 @@ export const delHotel = async (req, res) => {
   }
 };
 
+// Public list for the landing page: newest hotels owners have added (removed ones hidden).
+const PUBLIC_HOTEL_FIELDS = "name area city state price Image unmarriedFriendly AcRoomA NonAcRoomA TotalAc TotalNonAc";
+export const listHotels = async (req, res) => {
+  const limit = Math.min(Math.max(Number(req.query.limit) || 6, 1), 24);
+  try {
+    const hotels = await hotel.find(notRemoved).sort({ _id: -1 }).limit(limit).select(PUBLIC_HOTEL_FIELDS).lean();
+    res.json(hotels);
+  } catch (error) {
+    console.log("error while listing hotels", error);
+    res.status(500).json({ msg: "error while listing hotels" });
+  }
+};
+
 export const searchHotel = async(req,res)=>{
   const body = req.body;
+  const checkFromDate = new Date(body.fromDate)
+  const checkToDate = new Date(body.toDate)
+  if(isNaN(checkFromDate) || isNaN(checkToDate) || checkFromDate > checkToDate){
+      return res.status(400).json({error: "Invalid Date Range"})
+  }
+  const roomsWanted = Number(body.rooms) || 1
   try{
-      let hotels = []
-      const response = await hotel.find({
-          $or: [
-              {name: {$regex: new RegExp("^" + body.value ,"i")}},
-              {area: {$regex: new RegExp("^" + body.value ,"i")}},
-              {city: {$regex: new RegExp("^" + body.value ,"i")}}
-          ]
-      })
-      const checkFromDate = new Date(body.fromDate)
-      const checkToDate = new Date(body.toDate)
-      console.log(body.fromDate)
-      console.log(checkFromDate)
-      console.log(checkToDate)
-      if(isNaN(checkFromDate) || isNaN(checkToDate) || checkFromDate > checkToDate){
-          return res.status(400).json({error: "Invalid Date Range"})
-      }
-      for (let i = 0;i<response.length;i++){
-          const overlappingBookings = await bookings.find({
-              hotelId: response[i]._id,
-              $and: [
-                  {fromDate: {$lte: checkToDate}},
-                  {toDate: {$gte: checkFromDate}}
-              ]
-          })
-          
-          const roomsBooked = overlappingBookings.reduce((accumulator,item)=> { return accumulator + item.rooms},0)
-          console.log(roomsBooked)
-          let RoomType = "";
-          if(body.RoomType = "AC"){
-              RoomType = "TotalAc"
-          }else{
-              RoomType = "TotalNonAc"
-          }
-          
-            if((response[i][RoomType] - (roomsBooked + body.rooms )) >0 ){ 
-            hotels.push(response[i])
-          }
-        }
+      // Prefix match on name, area or city, case-insensitive; user text is escaped.
+      // String(body.value) keeps the old behaviour for an empty search (no results).
+      const prefix = new RegExp("^" + escapeRegex(String(body.value)), "i")
+      const candidates = await hotel.find({
+          ...notRemoved,
+          $or: [ {name: prefix}, {area: prefix}, {city: prefix} ]
+      }).lean()
+      const booked = await bookedRoomsByHotel(candidates.map((h) => h._id), checkFromDate, checkToDate, body.RoomType)
+      const hotels = candidates.filter(
+          (h) => roomsLeft(h, body.RoomType, booked.get(String(h._id))) - roomsWanted >= 0
+      )
       res.json(hotels)
   }catch(error){
       console.log("error while search hotel",error)
-      res.json("error while searching hotels")
+      res.status(500).json({msg: "error while searching hotels"})
   }
 }
 
 export const bookHotel = async(req,res)=>{
-  const body = req.body;
-  console.log(new Date(body.fromDate))
+  const parsed = bookingValidator.safeParse(req.body)
+  if (!parsed.success) {
+      return res.status(400).json({ msg: "booking details are incomplete", errors: parsed.error.flatten().fieldErrors })
+  }
+  const { hotelId, fromDate, toDate, rooms, RoomType } = parsed.data
   try {
-      const book = await bookings.create({
-          fromDate: new Date(body.fromDate),
-          toDate: new Date(body.toDate),
-          rooms: body.rooms,
-          bill:body.bill,
-          RoomType: body.RoomType,
+      const target = await hotel.findOne({ _id: hotelId, ...notRemoved }).lean()
+      if (!target) {
+          return res.status(404).json({ msg: "hotel not found" })
+      }
+      // Check-then-insert: fine for this app's traffic; a transaction would close the small race window.
+      const booked = (await bookedRoomsByHotel([target._id], fromDate, toDate, RoomType)).get(String(target._id))
+      if (roomsLeft(target, RoomType, booked) - rooms < 0) {
+          return res.status(409).json({ msg: "Not enough rooms available for these dates" })
+      }
+      await bookings.create({
+          fromDate,
+          toDate,
+          rooms,
+          bill: computeBill(Number(target.price), rooms, fromDate, toDate),
+          RoomType,
           bookedBy: req.userId,
-          hotelId: body.hotelId
+          hotelId: target._id
       })
 
       res.json({
-          msg: " hotel booked" 
+          msg: " hotel booked"
       })
   } catch (error) {
       console.log("error while booking hotel",error)
-      res.status(403).json({msg: "error while booking hotel"})
+      res.status(500).json({msg: "error while booking hotel"})
   }
 }
 
@@ -162,18 +190,19 @@ export const myBookings = async(req,res)=>{
     const book = await bookings.find({bookedBy: req.userId})
     .populate({
         path: 'hotelId',
-        select: 'name area city price Image'
+        select: 'name area city price Image isDeleted'
     })
     .populate({
         path: "bookedBy",
         select: 'name'
     })
+    .lean()
       res.json({
           bookings: book
       })
   }catch(error){
       console.log("error while geting my bookings",error)
-      res.status(403).json({
+      res.status(500).json({
           msg: "error while getting my bookings"
       })
   }

@@ -3,11 +3,12 @@ import env from "../../infrastructure/env.js"
 import AWS from "aws-sdk"
 
 AWS.config.update({
-    accessKeyId: process.env.AWS,
-    secretAccessKey: process.env.AWS_SK, 
-    region: 'ap-south-1' 
+    accessKeyId: env.AWS,
+    secretAccessKey: env.AWS_SK,
+    region: env.AWS_REGION
 });
-export const s3 = new AWS.S3()
+// LOCAL-ONLY branch: S3_ENDPOINT is only set for local MinIO (docker-compose).
+export const s3 = new AWS.S3(env.S3_ENDPOINT ? { endpoint: env.S3_ENDPOINT, s3ForcePathStyle: true } : {})
 
 async function dbConnection(){
     await mongoose

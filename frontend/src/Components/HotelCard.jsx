@@ -1,102 +1,33 @@
 import React from 'react'
+import { IoLocationOutline } from "react-icons/io5";
+import HotelImage from './ui/HotelImage.jsx'
+import BookingCard from './ui/BookingCard.jsx'
+import { formatPrice } from '../lib/format.js'
 
+// Horizontal hotel row with a main action button; extra actions go in `children`.
 const HotelCard = ({ item, buttonName, buttonClick, children }) => {
-
-  console.log(item)
-
   return (
-    <div
-      className='
-        w-full md:w-[90%] lg:w-[80%]
+    <div className='card card-hover flex w-full flex-col overflow-hidden animate-fade-up md:flex-row'>
+      <HotelImage src={item.Image} alt={item.name} className='h-48 w-full shrink-0 md:h-auto md:w-60' />
 
-        bg-white dark:bg-gray-800
+      <div className='flex flex-1 flex-col justify-between gap-5 p-6 md:flex-row md:items-center'>
+        <div>
+          <h3 className='font-display text-2xl leading-tight text-ink'>{item.name}</h3>
+          <p className='mt-1.5 flex items-center gap-1.5 text-sm text-muted'>
+            <IoLocationOutline className='text-brass' />
+            {item.area}, {item.city}
+          </p>
+          <p className='mt-3 text-lg font-semibold text-ink'>
+            {formatPrice(item.price)} <span className='text-sm font-normal text-muted'>/ night</span>
+          </p>
+        </div>
 
-        border border-gray-200 dark:border-gray-700
-
-        rounded-2xl
-
-        shadow-lg hover:shadow-2xl
-
-        transition-all duration-300
-
-        flex flex-col md:flex-row
-
-        justify-between
-
-        gap-6
-
-        p-4 md:p-6
-
-        items-center
-      '
-    >
-      {/* Image */}
-
-      <div
-        className='
-          w-full md:w-40
-
-          h-52 md:h-40
-
-          rounded-xl
-
-          overflow-hidden
-
-          shadow-md
-
-          bg-center bg-cover
-        '
-        style={{
-          background: `url(${item.Image})`,
-          backgroundSize: "cover"
-        }}
-      ></div>
-
-      {/* Details */}
-
-      <ul className='flex-1 text-center md:text-left'>
-        <li className='text-2xl font-bold text-gray-800 dark:text-white'>
-          {item.name}
-        </li>
-
-        <li className='text-lg font-medium text-gray-600 dark:text-gray-300 mt-2'>
-          {item.area}, {item.city}
-        </li>
-
-        <li className='text-2xl font-bold text-blue-600 dark:text-blue-400 mt-3'>
-          $ {item.price}
-        </li>
-      </ul>
-
-      {/* Buttons */}
-
-      <div className='flex flex-wrap justify-center gap-3'>
-        <button
-          className='
-            bg-secondaryC
-
-            hover:opacity-90
-
-            text-white
-
-            px-5 py-3
-
-            rounded-xl
-
-            font-bold
-
-            uppercase
-
-            shadow-md hover:shadow-lg
-
-            transition-all duration-300
-          '
-          onClick={buttonClick}
-        >
-          {buttonName}
-        </button>
-
-        {children}
+        <div className='flex flex-wrap gap-3'>
+          <button type='button' className='btn btn-outline btn-sm' onClick={buttonClick}>
+            {buttonName}
+          </button>
+          {children}
+        </div>
       </div>
     </div>
   )
@@ -104,122 +35,5 @@ const HotelCard = ({ item, buttonName, buttonClick, children }) => {
 
 export default HotelCard
 
-
-
-export const AdminBookingCard = ({ item }) => {
-
-  return (
-    <div
-      className='
-        w-full md:w-[90%] lg:w-[80%]
-
-        bg-white dark:bg-gray-800
-
-        border border-gray-200 dark:border-gray-700
-
-        rounded-2xl
-
-        shadow-lg hover:shadow-xl
-
-        transition-all duration-300
-
-        p-6
-
-        flex flex-col lg:flex-row
-
-        justify-between
-
-        gap-8
-
-        items-center
-
-        font-primary
-      '
-    >
-      {/* Image */}
-
-      <div
-        className='
-          w-full md:w-40
-
-          h-52 md:h-40
-
-          rounded-xl
-
-          overflow-hidden
-
-          shadow-md
-
-          bg-center bg-cover
-        '
-        style={{
-          background: `url(${item.hotelId[0].Image})`,
-          backgroundSize: "cover"
-        }}
-      >
-      </div>
-
-      {/* Hotel Details */}
-
-      <div className='text-center lg:text-left'>
-        <ul className='space-y-2'>
-          <li className='font-bold uppercase text-lg text-blue-600 dark:text-blue-400'>
-            Hotel Details
-          </li>
-
-          <li className='text-gray-700 dark:text-gray-300'>
-            Hotel Name: {item.hotelId[0].name}
-          </li>
-
-          <li className='text-gray-700 dark:text-gray-300'>
-            Address: {item.hotelId[0].area}
-          </li>
-
-          <li className='text-gray-700 dark:text-gray-300'>
-            Price: {item.hotelId[0].price}
-          </li>
-        </ul>
-      </div>
-
-      {/* User Details */}
-
-      <div className='text-center lg:text-left'>
-        <ul className='space-y-2'>
-          <li className='font-bold uppercase text-lg text-green-600 dark:text-green-400'>
-            User Details
-          </li>
-
-          <li className='text-gray-700 dark:text-gray-300'>
-            Name: {item.bookedBy[0].name}
-          </li>
-
-          <li className='text-gray-700 dark:text-gray-300'>
-            Email: {item.bookedBy[0].email}
-          </li>
-        </ul>
-      </div>
-
-      {/* Booking Details */}
-
-      <div className='text-center lg:text-left'>
-        <ul className='space-y-2'>
-          <li className='font-bold uppercase text-lg text-orange-600 dark:text-orange-400'>
-            Booking Details
-          </li>
-
-          <li className='text-gray-700 dark:text-gray-300'>
-            From: {item.fromDate.slice(0, 10)}
-          </li>
-
-          <li className='text-gray-700 dark:text-gray-300'>
-            To: {item.toDate.slice(0, 10)}
-          </li>
-
-          <li className='text-gray-700 dark:text-gray-300'>
-            Rooms: {item.rooms}
-          </li>
-        </ul>
-      </div>
-    </div>
-  )
-}
+// A booking as admins see it: hotel, guest and stay details.
+export const AdminBookingCard = ({ item, index }) => <BookingCard booking={item} index={index} showGuest />

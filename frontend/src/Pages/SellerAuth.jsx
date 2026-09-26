@@ -1,20 +1,29 @@
 import React, { useState } from 'react'
 import SellerSignin from '../Model/SellerSignin.jsx'
 import SellerSignup from '../Model/SellerSignup.jsx'
-import u from "/L13.jpg"
-import i from "/L6.jpg"
+import AuthShell from '../Components/ui/AuthShell.jsx'
+
+// Optimized photos served from /public.
+const signupImage = "/L13.webp"
+const signinImage = "/L6.webp"
+
 export const SellerAuth = () => {
-    const [authType, setAuthType] = useState("signup")
+    const [authType, setAuthType] = useState(
+      new URLSearchParams(window.location.search).get("expired") ? "signin" : "signup"
+    )
   return (
-    <div className='w-full h-screen bg-cover bg-center ' style={{ backgroundImage: authType === "signup" ? `url(${u})` : `url(${i})`, height: ``, width: ``, }}>
+    <AuthShell
+      image={authType === "signup" ? signupImage : signinImage}
+      eyebrow="Hotel Owner Portal"
+      caption={authType === "signup" ? "List your property and start receiving bookings." : "Manage your hotels and bookings."}
+    >
         {
             authType == "signup"?
             <SellerSignup authType = {setAuthType} />
             :
             <SellerSignin authType = {setAuthType} />
-
         }
-    </div>
+    </AuthShell>
   )
 }
 export default SellerAuth

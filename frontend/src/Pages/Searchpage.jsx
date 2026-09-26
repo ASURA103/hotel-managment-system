@@ -1,340 +1,95 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { B_URL } from "../../config.js";
 import { toast, Toaster } from "sonner";
 import SearchBar from "../Components/SearchBar1.jsx";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../Components/Navbar.jsx";
+import StayCard, { StayCardSkeleton } from "../Components/ui/StayCard.jsx";
+import EmptyState from "../Components/ui/EmptyState.jsx";
+import { errorMessage } from "../lib/api.js";
+import { getRole, getToken } from "../lib/session.js";
 
-export const Searchpage = ({}) => {
+export const Searchpage = () => {
   const navigate = useNavigate();
-
-  const items = useSelector((state) => state);
-
-  const [loading, setLoading] = useState(true);
-
+  const search = useSelector((state) => state.updateItem);
+  const [status, setStatus] = useState("loading"); // loading | ready | error
   const [hotels, setHotels] = useState([]);
 
-  console.log(items);
+  const fetchHotels = useCallback(async () => {
+    setStatus("loading");
+    try {
+      const response = await axios.post(`${B_URL}/user/searchHotel`, search);
+      setHotels(Array.isArray(response.data) ? response.data : []);
+      setStatus("ready");
+    } catch (error) {
+      toast.error(errorMessage(error, "error while searching hotels"));
+      setStatus("error");
+    }
+  }, [search]);
 
   useEffect(() => {
-    const fetchHotels = async () => {
-      try {
-        const response = await axios.post(
-          `${B_URL}/user/searchHotel`,
-          items.updateItem
-        );
-
-        setHotels(response.data);
-
-        setLoading(false);
-
-        console.log("search data response", response.data);
-      } catch (error) {
-        toast.error("error while searching hotels");
-      }
-    };
-
     fetchHotels();
-  }, [items.updateItem]);
-
-  console.log(items);
-
-  console.log("hotels", hotels);
+  }, [fetchHotels]);
 
   function Book(hotel) {
-    navigate("/book", { state: hotel });
+    if (!getToken() || getRole() !== "user") {
+      navigate("/user/auth");
+      return;
+    }
+    // Carry the search so the booking form starts with the same dates and rooms.
+    navigate("/book", {
+      state: { ...hotel, search: { fromDate: search.fromDate, toDate: search.toDate, rooms: search.rooms, RoomType: search.RoomType } },
+    });
   }
 
   return (
-    <>
-      <div
-        className="
-        min-h-screen
+    <div className="min-h-screen bg-bg">
+      <Navbar />
+      <Toaster richColors position="top-center" />
 
-        bg-gradient-to-br
+      <div className="container-page pt-28">
+        <SearchBar />
+      </div>
 
-        from-sky-100
-        via-cyan-50
-        to-blue-100
-
-        dark:from-slate-950
-        dark:via-slate-900
-        dark:to-slate-950
-
-        text-slate-900
-        dark:text-white
-
-        pt-6
-
-        transition-all duration-300
-      "
-      >
-        <Navbar />
-        {/* SEARCH BAR */}
-
-        <div className="w-full mt-20 max-w-7xl mx-auto px-4 z-10">
-          <SearchBar />
+      <main className="container-page py-12">
+        <div className="mb-10 animate-fade-up">
+          <p className="eyebrow">Search results</p>
+          <h1 className="title-section mt-2">
+            {status === "ready" ? `${hotels.length} ${hotels.length === 1 ? "hotel" : "hotels"} found in ` : "Hotels in "}
+            <span className="italic text-brass">{search.value}</span>
+          </h1>
+          <p className="mt-2 text-muted">Find the best hotels matching your search.</p>
         </div>
 
-        <Toaster />
-
-        {loading ? (
-          <div className="flex justify-center items-center h-[50vh]">
-            <div
-              className="
-              text-3xl
-
-              font-bold
-
-              text-blue-700
-              dark:text-blue-400
-
-              animate-pulse
-            "
-            >
-              LOADING...
-            </div>
-          </div>
-        ) : (
-          <div className="max-w-7xl mx-auto px-4 py-10">
-            {/* RESULTS */}
-
-            <div className="mb-10">
-              <h1
-                className="
-                text-3xl
-                md:text-4xl
-
-                font-bold
-
-                text-slate-800
-                dark:text-white
-              "
-              >
-                {hotels.length} Hotels found in{" "}
-                <span className="text-blue-600 dark:text-cyan-400">
-                  {items.updateItem.value}
-                </span>
-              </h1>
-
-              <p className="text-gray-600 dark:text-gray-400 mt-2">
-                Find the best hotels matching your search.
-              </p>
-            </div>
-
-            {/* HOTEL LIST */}
-
-            <div
-              className="
-              grid
-
-              grid-cols-1
-
-              sm:grid-cols-2
-
-              lg:grid-cols-3
-
-              gap-8
-            "
-            >
-              {hotels.map((hotel) => (
-                <div
-                  key={hotel._id}
-                  className="
-                  bg-white
-
-                  dark:bg-slate-900
-
-                  rounded-3xl
-
-                  overflow-hidden
-
-                  shadow-xl
-
-                  hover:shadow-2xl
-
-                  hover:-translate-y-2
-
-                  border
-
-                  border-slate-200
-                  dark:border-slate-700
-
-                  transition-all duration-300
-                "
-                >
-                  {/* IMAGE */}
-
-                  <div className="overflow-hidden">
-                    <img
-                      src={hotel.Image}
-                      alt={hotel.name}
-                      className="
-                      w-full
-
-                      h-[260px]
-
-                      object-cover
-
-                      hover:scale-110
-
-                      transition-all duration-700
-                    "
-                    />
-                  </div>
-
-                  {/* CONTENT */}
-
-                  <div className="p-6">
-                    <div className="text-center mb-5">
-                      <h1
-                        className="
-                        text-3xl
-
-                        font-bold
-
-                        text-slate-800
-                        dark:text-white
-                      "
-                      >
-                        {hotel.name}
-                      </h1>
-                    </div>
-
-                    <div
-                      className="
-                      space-y-2
-
-                      text-slate-700
-                      dark:text-slate-300
-
-                      font-medium
-                    "
-                    >
-                      <p>
-                        <span className="font-bold">Area:</span>{" "}
-                        {hotel.area}
-                      </p>
-
-                      <p>
-                        <span className="font-bold">City:</span>{" "}
-                        {hotel.city}
-                      </p>
-
-                      <p>
-                        <span className="font-bold">State:</span>{" "}
-                        {hotel.state}
-                      </p>
-
-                      <p>
-                        <span className="font-bold">
-                          Unmarried Friendly:
-                        </span>{" "}
-                        {hotel.unmarriedFriendly ? "Yes" : "No"}
-                      </p>
-
-                      <p>
-                        <span className="font-bold">
-                          AC Rooms Available:
-                        </span>{" "}
-                        {hotel.AcRoomA ? "Yes" : "No"}
-                      </p>
-
-                      <p>
-                        <span className="font-bold">
-                          Non-AC Rooms Available:
-                        </span>{" "}
-                        {hotel.NonAcRoomA ? "Yes" : "No"}
-                      </p>
-                    </div>
-
-                    {/* PRICE + BUTTON */}
-
-                    <div className="flex justify-between items-center mt-7">
-                      <div>
-                        <h1
-                          className="
-                          text-3xl
-
-                          font-extrabold
-
-                          text-green-600
-                          dark:text-green-400
-                        "
-                        >
-                          ₹{hotel.price}
-
-                          <span className="text-gray-400 text-base font-normal">
-                            {" "}
-                            / Night
-                          </span>
-                        </h1>
-                      </div>
-
-                      <button
-                        onClick={() => Book(hotel)}
-                        className="
-                        px-6
-
-                        py-3
-
-                        rounded-2xl
-
-                        bg-gradient-to-r
-
-                        from-blue-600
-                        to-cyan-500
-
-                        hover:from-blue-700
-                        hover:to-cyan-600
-
-                        text-white
-
-                        font-bold
-
-                        shadow-lg
-
-                        hover:shadow-2xl
-
-                        hover:scale-105
-
-                        transition-all duration-300
-                      "
-                      >
-                        BOOK NOW
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {hotels.length === 0 && (
-              <div className="text-center py-20">
-                <h1
-                  className="
-                  text-4xl
-
-                  font-bold
-
-                  text-slate-700
-                  dark:text-slate-300
-                "
-                >
-                  No Hotels Found 😔
-                </h1>
-
-                <p className="mt-4 text-gray-500">
-                  Try changing your filters or search another city.
-                </p>
-              </div>
-            )}
+        {status === "loading" && (
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }, (_, i) => <StayCardSkeleton key={i} />)}
           </div>
         )}
-      </div>
-    </>
+
+        {status === "error" && (
+          <EmptyState
+            title="Search didn't go through"
+            text="Check the destination and dates, then try again."
+            action={<button type="button" onClick={fetchHotels} className="btn btn-outline">Try again</button>}
+          />
+        )}
+
+        {status === "ready" && hotels.length === 0 && (
+          <EmptyState title="No hotels found" text="Try changing your filters or search another city." />
+        )}
+
+        {status === "ready" && hotels.length > 0 && (
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {hotels.map((hotel, i) => (
+              <StayCard key={hotel._id} hotel={hotel} index={i} onBook={Book} actionLabel="Book now" detailed />
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
   );
 };
 
