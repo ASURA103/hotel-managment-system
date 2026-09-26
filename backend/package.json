@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test --test-concurrency=1 \"test/**/*.test.js\"",
     "start": "node index.js",
     "server": "nodemon index.js"
   },
@@ -27,5 +27,8 @@
     "nodemailer": "^7.0.11",
     "nodemon": "^3.1.7",
     "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^11.3.0"
   }
 }
