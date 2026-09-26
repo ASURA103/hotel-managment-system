@@ -4,11 +4,11 @@ import AddHotel from '../Pages/addHotel.jsx'
 import HotelList from '../Pages/HotelList.jsx'
 import EditHotel from '../Pages/EditHotel.jsx'
 
-const SDashboard = ({page}) => {
+const SDashboard = ({page, editingHotel, onEdit, onDone}) => {
     if(page=="bookings") return<Bookings />
-    else if(page=="add") return<AddHotel />
-    else if(page=="edit") return<EditHotel />
-    else return< HotelList />
+    else if(page=="add") return<AddHotel embedded onDone={onDone} />
+    else if(page=="edit") return<EditHotel hotel={editingHotel} onDone={onDone} />
+    else return< HotelList onEdit={onEdit} />
 }
 
 export default SDashboard

@@ -67,6 +67,9 @@ import axios from "axios";
 import { B_URL } from "../../config.js";
 import { Toaster, toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import AuthShell, { AuthHeading, ExpiredNote } from "../Components/ui/AuthShell.jsx";
+import { saveSession } from "../lib/session.js";
+import { errorMessage } from "../lib/api.js";
 
 const AdminAuth = () => {
   const navigate = useNavigate();
@@ -74,6 +77,7 @@ const AdminAuth = () => {
     username: "",
     password: "",
   });
+  const [busy, setBusy] = React.useState(false);
 
   function handlechange(type, e) {
     setFormData({
@@ -82,55 +86,39 @@ const AdminAuth = () => {
     });
   }
 
-  async function handleSubmit() {
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setBusy(true);
     try {
       const response = await axios.post(`${B_URL}/admin/signin`, formData);
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("name", response.data.username);
-      localStorage.setItem("type", "admin");
+      saveSession({ token: response.data.token, name: response.data.username, type: "admin" });
       toast.success("Signin Successful");
       setTimeout(() => {
         navigate("/admin/dashboard");
-      }, 2000);
+      }, 1200);
     } catch (error) {
-      toast.error("Invalid credentials");
+      toast.error(errorMessage(error, "Invalid credentials"));
       console.log("Error while signing in", error);
+      setBusy(false);
     }
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-100 via-indigo-200 to-purple-300">
-      <div className="bg-white shadow-xl rounded-2xl p-8 max-w-md w-full text-center border-t-4 border-blue-500">
-        <h1 className="text-4xl font-extrabold text-gray-900">SIGN IN</h1>
-        <p className="text-gray-500 mt-2">Enter your credentials to sign in</p>
-        
-        <div className="mt-6 space-y-4">
-          <Input
-            type="text"
-            placeholder="Username"
-            name="Name"
-            id="username"
-            onChange={(e) => handlechange("username", e)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400"
-          />
-          <Input
-            type="password"
-            placeholder="Password"
-            name="Password"
-            id="password"
-            onChange={(e) => handlechange("password", e)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400"
-          />
-          <button
-            className="w-full bg-blue-600 hover:bg-blue-700 transition-all text-white font-bold py-3 rounded-lg shadow-md"
-            onClick={handleSubmit}
-          >
-            Sign In
+    <AuthShell image="/footer.avif" eyebrow="Admin" caption="Keep DreamStay running smoothly.">
+      <form onSubmit={handleSubmit}>
+        <p className="eyebrow mb-8">Admin</p>
+        <ExpiredNote />
+        <AuthHeading title="Sign in" subtitle="Enter your credentials to sign in" />
+        <div className="flex flex-col gap-5">
+          <Input type="text" placeholder="Username" name="Username" id="username" autoComplete="username" value={formData.username} onChange={(e) => handlechange("username", e)} />
+          <Input type="password" placeholder="Password" name="Password" id="password" autoComplete="current-password" value={formData.password} onChange={(e) => handlechange("password", e)} />
+          <button type="submit" disabled={busy} className="btn btn-primary w-full">
+            {busy ? "Signing in…" : "Sign In"}
           </button>
         </div>
-      </div>
-      <Toaster />
-    </div>
+      </form>
+      <Toaster richColors position="top-center" />
+    </AuthShell>
   );
 };
 

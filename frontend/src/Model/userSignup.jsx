@@ -5,16 +5,19 @@ import { B_URL } from "../../config.js";
 import { Toaster, toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { HiHome } from "react-icons/hi";
+import { AuthHeading } from "../Components/ui/AuthShell.jsx";
+import { saveSession } from "../lib/session.js";
+import { errorMessage } from "../lib/api.js";
 
 const UserSignup = ({ position }) => {
   const navigate = useNavigate();
-
   const [formData, setFormData] = React.useState({
     name: "",
     username: "",
     email: "",
     password: "",
   });
+  const [busy, setBusy] = React.useState(false);
 
   function handlechange(type, e) {
     setFormData({
@@ -23,227 +26,52 @@ const UserSignup = ({ position }) => {
     });
   }
 
-  async function handleSubmit() {
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setBusy(true);
     try {
-      const response = await axios.post(
-        `${B_URL}/user/signup`,
-        formData
-      );
-
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("name", response.data.name);
-      localStorage.setItem("type", "user");
-
+      const response = await axios.post(`${B_URL}/user/signup`, formData);
+      saveSession({ token: response.data.token, name: response.data.name, type: "user" });
       toast.success("Signup Successful");
-
       setTimeout(() => {
         navigate("/");
-      }, 2000);
+      }, 1200);
     } catch (error) {
-      toast.error("Invalid credentials");
+      toast.error(errorMessage(error, "Invalid credentials"));
       console.log("error while signup", error);
+      setBusy(false);
     }
   }
 
   return (
-    <div
-      className="
-      min-h-screen
-
-      flex items-center justify-center
-
-      px-4 py-10
-
-      bg-gradient-to-br
-      from-sky-100
-      via-cyan-100
-      to-blue-200
-
-      dark:from-slate-950
-      dark:via-slate-900
-      dark:to-slate-800
-    "
-    >
-      <div
-        className="
-        w-full max-w-md
-
-        backdrop-blur-xl
-
-        bg-white/80
-        dark:bg-slate-900/80
-
-        border
-        border-white/30
-        dark:border-slate-700
-
-        rounded-[2rem]
-
-        shadow-2xl
-
-        px-8 py-10
-
-        transition-all duration-300
-
-        hover:shadow-cyan-300/30
-      "
-      >
-        
-        {/* Heading */}
-
-        <div className="text-center mb-8">
-          <h1
-            className="
-            text-4xl
-            font-extrabold
-
-            text-[#03045e]
-            dark:text-white
-          "
-          >
-            SIGN UP
-          </h1>
-
-          <p
-            className="
-            mt-2
-
-            text-gray-500
-            dark:text-gray-400
-          "
-          >
-            Enter your credentials to signup
-          </p>
+    <div className="flex min-h-screen items-center justify-center px-6 py-16 sm:px-12">
+      <form onSubmit={handleSubmit} className="w-full max-w-md animate-fade-up">
+        <div className="mb-8 flex items-center justify-between">
+          <p className="eyebrow">New to DreamStay</p>
+          <button type="button" onClick={() => navigate("/")} aria-label="Home" className="flex h-10 w-10 items-center justify-center rounded-full border border-line text-ink transition hover:bg-surface">
+            <HiHome size={18} />
+          </button>
         </div>
-        {/* Home Button */}
-
-<button
-  onClick={() => navigate("/")}
-  className="
-    fixed top-6 left-6 z-50
-
-    w-12 h-12
-
-    rounded-full
-
-    bg-white/80
-    dark:bg-slate-900/80
-
-    backdrop-blur-lg
-
-    border
-    border-gray-200
-    dark:border-slate-700
-
-    shadow-lg
-
-    flex items-center justify-center
-
-    text-[#03045e]
-    dark:text-white
-
-    hover:scale-110
-    hover:shadow-xl
-
-    transition-all duration-300
-  "
->
-  <HiHome size={24} />
-</button>
-
-        {/* Form */}
+        <AuthHeading title="Sign up" subtitle="Enter your details to create an account" />
 
         <div className="flex flex-col gap-5">
-          <Input
-            type="text"
-            placeholder="Name"
-            name="Name"
-            id="name"
-            onChange={(e) => handlechange("name", e)}
-          />
-
-          <Input
-            type="text"
-            placeholder="username"
-            name="Username"
-            id="username"
-            onChange={(e) => handlechange("username", e)}
-          />
-
-          <Input
-            type="email"
-            placeholder="name@gmail.com"
-            name="Email"
-            id="email"
-            onChange={(e) => handlechange("email", e)}
-          />
-
-          <Input
-            type="password"
-            placeholder="********"
-            name="Password"
-            id="password"
-            onChange={(e) => handlechange("password", e)}
-          />
-
-          <button
-            onClick={handleSubmit}
-            className="
-            w-full
-
-            py-3
-
-            rounded-xl
-
-            bg-blue-600
-            hover:bg-blue-700
-
-            dark:bg-blue-500
-            dark:hover:bg-blue-600
-
-            text-white
-
-            font-bold
-            text-lg
-
-            shadow-lg
-
-            hover:scale-[1.02]
-
-            transition-all duration-300
-          "
-          >
-            Sign Up
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <Input type="text" placeholder="Name" name="Name" id="name" autoComplete="name" value={formData.name} onChange={(e) => handlechange("name", e)} />
+            <Input type="text" placeholder="username" name="Username" id="username" autoComplete="username" value={formData.username} onChange={(e) => handlechange("username", e)} />
+          </div>
+          <Input type="email" placeholder="name@gmail.com" name="Email" id="signup-email" autoComplete="email" value={formData.email} onChange={(e) => handlechange("email", e)} />
+          <Input type="password" placeholder="At least 6 characters" name="Password" id="signup-password" minLength={6} autoComplete="new-password" value={formData.password} onChange={(e) => handlechange("password", e)} />
+          <button type="submit" disabled={busy} className="btn btn-primary w-full">
+            {busy ? "Creating account…" : "Sign Up"}
           </button>
-
-          <p
-            className="
-            text-center
-
-            text-gray-500
-            dark:text-gray-400
-          "
-          >
+          <p className="text-center text-sm text-muted">
             Already have an account?{" "}
-            <span
-              onClick={() => position("signin")}
-              className="
-              cursor-pointer
-
-              font-semibold
-
-              text-blue-600
-              dark:text-cyan-400
-
-              hover:underline
-            "
-            >
+            <button type="button" onClick={() => position("signin")} className="font-semibold text-ink underline-offset-4 hover:underline">
               Sign In
-            </span>
+            </button>
           </p>
         </div>
-      </div>
-
+      </form>
       <Toaster position="top-right" richColors />
     </div>
   );

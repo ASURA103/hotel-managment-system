@@ -1,5 +1,7 @@
 import React from "react";
 
+// Labelled text input used across the forms. Extra props (min, max, disabled, autoComplete,
+// required=false, ...) pass straight to the <input>.
 export default function Input({
   type,
   placeholder,
@@ -7,12 +9,13 @@ export default function Input({
   name,
   value,
   onChange,
+  required = true,
+  className = "",
+  ...rest
 }) {
   return (
-    <label htmlFor={id} className="w-full flex flex-col gap-1">
-      <h1 className="text-sm font-medium text-gray-700 dark:text-gray-200">
-        {name}:
-      </h1>
+    <label htmlFor={id} className={`flex w-full flex-col gap-1.5 ${className}`}>
+      <span className="field-label">{name}</span>
 
       <input
         type={type}
@@ -20,22 +23,9 @@ export default function Input({
         value={value}
         placeholder={placeholder}
         onChange={onChange}
-        required
-        className="
-          px-3 py-2 h-10 w-full
-          border border-gray-300 dark:border-gray-600
-          rounded-md
-
-          bg-white dark:bg-gray-900
-          text-black dark:text-white
-          placeholder-gray-400 dark:placeholder-gray-500
-
-          focus:outline-none
-          focus:ring-2 focus:ring-blue-500
-          focus:border-transparent
-
-          transition-all duration-300
-        "
+        required={required}
+        className="field"
+        {...rest}
       />
     </label>
   );

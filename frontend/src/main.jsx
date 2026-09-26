@@ -5,6 +5,9 @@ import App from './App.jsx'
 import { Provider } from 'react-redux'
 import { store } from './lib/store.js' 
 import { ThemeProvider } from './Components/ThemeContext.jsx'
+import { setupApi } from './lib/api.js'
+
+setupApi()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

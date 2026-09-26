@@ -5,17 +5,20 @@ import { toast, Toaster } from "sonner";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { HiHome } from "react-icons/hi";
+import { AuthHeading } from "../Components/ui/AuthShell.jsx";
+import { saveSession } from "../lib/session.js";
+import { errorMessage } from "../lib/api.js";
 
 const SellerSignup = ({ authType }) => {
   const navigate = useNavigate();
-
   const [formData, setFormData] = React.useState({
     name: "",
     email: "",
     phone: "",
-    idproof: "",
+    idProof: "",
     password: "",
   });
+  const [busy, setBusy] = React.useState(false);
 
   function handleChange(type, e) {
     setFormData({
@@ -24,247 +27,57 @@ const SellerSignup = ({ authType }) => {
     });
   }
 
-  async function handleSubmit() {
+  async function handleSubmit(e) {
+    e.preventDefault();
     const data = {
       ...formData,
       phone: parseInt(formData.phone),
     };
-
+    setBusy(true);
     try {
-      const response = await axios.post(
-        `${B_URL}/owner/signup`,
-        data
-      );
-
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("name", response.data.ownername);
-      localStorage.setItem("type", "owner");
-
+      const response = await axios.post(`${B_URL}/owner/signup`, data);
+      saveSession({ token: response.data.token, name: response.data.ownername, type: "owner" });
       toast.success("Signup Successful");
-
       setTimeout(() => {
         navigate("/seller/dashboard");
-      }, 2000);
+      }, 1200);
     } catch (error) {
-      toast.error("Invalid Credentials");
+      toast.error(errorMessage(error, "Invalid Credentials"));
       console.log(error);
+      setBusy(false);
     }
   }
 
   return (
-    <div
-      className="
-      min-h-screen
-
-      flex items-center justify-center
-
-      px-4 py-10
-
-      bg-gradient-to-br
-      from-orange-100
-      via-amber-100
-      to-yellow-100
-
-      dark:from-slate-950
-      dark:via-slate-900
-      dark:to-slate-800
-
-      relative
-    "
-    >
-      {/* HOME BUTTON */}
-
-      <button
-        onClick={() => navigate("/")}
-        className="
-          fixed top-6 left-6 z-50
-
-          w-12 h-12
-
-          rounded-full
-
-          bg-white/80
-          dark:bg-slate-900/80
-
-          backdrop-blur-lg
-
-          border
-          border-gray-200
-          dark:border-slate-700
-
-          shadow-lg
-
-          flex items-center justify-center
-
-          text-[#03045e]
-          dark:text-white
-
-          hover:scale-110
-          hover:shadow-xl
-
-          transition-all duration-300
-        "
-      >
-        <HiHome size={24} />
-      </button>
-
-      {/* CARD */}
-
-      <div
-        className="
-        w-full max-w-md
-
-        backdrop-blur-xl
-
-        bg-white/80
-        dark:bg-slate-900/80
-
-        border
-        border-white/30
-        dark:border-slate-700
-
-        rounded-[2rem]
-
-        shadow-2xl
-
-        px-8 py-10
-
-        transition-all duration-300
-
-        hover:shadow-orange-300/30
-      "
-      >
-        {/* TOP TITLE */}
-
-        <div className="text-center mb-8">
-          <h1
-            className="
-            text-4xl
-
-            font-extrabold
-
-            text-orange-600
-            dark:text-orange-400
-          "
-          >
-            Hotel Owner
-          </h1>
-
-          <p
-            className="
-            mt-2
-
-            text-gray-500
-            dark:text-gray-400
-          "
-          >
-            Join DreamStay and list your properties
-          </p>
-        </div>
-
-        {/* FORM */}
-
-        <div className="flex flex-col gap-5">
-          <Input
-            type="text"
-            placeholder="name"
-            name="Name"
-            id="name"
-            onChange={(e) => handleChange("name", e)}
-          />
-
-          <Input
-            type="email"
-            placeholder="name@gmail.com"
-            name="Email"
-            id="email"
-            onChange={(e) => handleChange("email", e)}
-          />
-
-          <Input
-            type="number"
-            placeholder="9876543210"
-            name="Phone"
-            id="phone"
-            onChange={(e) => handleChange("phone", e)}
-          />
-
-          <Input
-            type="text"
-            placeholder="FGHSJKD4"
-            name="Id Proof"
-            id="idproof"
-            onChange={(e) => handleChange("idProof", e)}
-          />
-
-          <Input
-            type="password"
-            placeholder="********"
-            name="Password"
-            id="password"
-            onChange={(e) => handleChange("password", e)}
-          />
-
-          <button
-            onClick={handleSubmit}
-            className="
-            w-full
-
-            py-3
-
-            rounded-xl
-
-            bg-orange-500
-            hover:bg-orange-600
-
-            dark:bg-orange-500
-            dark:hover:bg-orange-600
-
-            text-white
-
-            font-bold
-            text-lg
-
-            shadow-lg
-
-            hover:scale-[1.02]
-
-            transition-all duration-300
-          "
-          >
-            Sign Up
-          </button>
-
-          <p
-            className="
-            text-center
-
-            text-gray-500
-            dark:text-gray-400
-          "
-          >
-            Already have an account?{" "}
-            <span
-              onClick={() => authType("signin")}
-              className="
-              cursor-pointer
-
-              font-semibold
-
-              text-orange-600
-              dark:text-orange-400
-
-              hover:underline
-            "
-            >
-              Sign In
-            </span>
-          </p>
-        </div>
+    <form onSubmit={handleSubmit}>
+      <div className="mb-8 flex items-center justify-between">
+        <p className="eyebrow">Hotel Owner</p>
+        <button type="button" onClick={() => navigate("/")} aria-label="Home" className="flex h-10 w-10 items-center justify-center rounded-full border border-line text-ink transition hover:bg-surface">
+          <HiHome size={18} />
+        </button>
       </div>
+      <AuthHeading title="Create owner account" subtitle="Join DreamStay and list your properties" />
 
+      <div className="flex flex-col gap-5">
+        <Input type="text" placeholder="name" name="Name" id="name" autoComplete="name" value={formData.name} onChange={(e) => handleChange("name", e)} />
+        <Input type="email" placeholder="name@gmail.com" name="Email" id="email" autoComplete="email" value={formData.email} onChange={(e) => handleChange("email", e)} />
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <Input type="number" placeholder="9876543210" name="Phone" id="phone" autoComplete="tel" value={formData.phone} onChange={(e) => handleChange("phone", e)} />
+          <Input type="text" placeholder="FGHSJKD4" name="Id Proof" id="idproof" value={formData.idProof} onChange={(e) => handleChange("idProof", e)} />
+        </div>
+        <Input type="password" placeholder="At least 6 characters" name="Password" id="password" minLength={6} autoComplete="new-password" value={formData.password} onChange={(e) => handleChange("password", e)} />
+        <button type="submit" disabled={busy} className="btn btn-primary w-full">
+          {busy ? "Creating account…" : "Sign Up"}
+        </button>
+        <p className="text-center text-sm text-muted">
+          Already have an account?{" "}
+          <button type="button" onClick={() => authType("signin")} className="font-semibold text-ink underline-offset-4 hover:underline">
+            Sign In
+          </button>
+        </p>
+      </div>
       <Toaster position="top-right" richColors />
-    </div>
+    </form>
   );
 };
 
