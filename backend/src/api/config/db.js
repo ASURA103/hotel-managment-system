@@ -7,7 +7,7 @@ AWS.config.update({
     secretAccessKey: env.AWS_SK,
     region: env.AWS_REGION
 });
-// LOCAL-TEST-ONLY branch: S3_ENDPOINT is only set for tests / local MinIO.
+// LOCAL-ONLY branch: S3_ENDPOINT is only set for local MinIO (docker-compose).
 export const s3 = new AWS.S3(env.S3_ENDPOINT ? { endpoint: env.S3_ENDPOINT, s3ForcePathStyle: true } : {})
 
 async function dbConnection(){
