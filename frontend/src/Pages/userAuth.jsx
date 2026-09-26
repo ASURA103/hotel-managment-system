@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import UserSignin from "../Model/userSignIn";
 import UserSignup from "../Model/userSignup";
 
-// Optimized copies of the original photos (U1.jpg, L12.avif stay in /public).
+// Optimized photos served from /public.
 const signupImage = "/U1.webp";
 const signinImage = "/L12.avif";
 

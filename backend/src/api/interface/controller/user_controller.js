@@ -3,8 +3,6 @@ import {
   signupValidator,
 } from "../../config/helper/validators.js";
 import user from "../../config/schema/userschema.js";
-import hotel from "../../config/schema/hotel.schema.js";
-import bookings from "../../config/schema/booking.schema.js";
 import { hashPassword, verifyPassword } from "../lib/passwords.js";
 import { ROLES, signToken } from "../lib/tokens.js";
 

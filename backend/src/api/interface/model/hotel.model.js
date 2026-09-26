@@ -28,12 +28,6 @@ export const fileUpload = async(file)=>{
     }
     // Awaited: if S3 rejects the upload, the caller gets the error and no hotel is saved.
     await s3.upload(params).promise()
-    // Kept from the original code; the signed URL isn't used by callers (see DEAD_CODE_AND_UNUSED.md).
-    // It is no longer logged, because it grants temporary access to the object.
-    s3.getSignedUrl('getObject',{
-        Bucket: env.S3_BUCKET,
-        Key: filename
-    })
     return {
       filename: filename
     }

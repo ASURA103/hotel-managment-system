@@ -1,4 +1,3 @@
-import express, { response } from "express"
 import { adminSigninValidator, idValidator } from "../../config/helper/validators.js"
 import admin from "../../config/schema/admin.schema.js"
 import bookings from "../../config/schema/booking.schema.js"

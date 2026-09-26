@@ -3,7 +3,7 @@ import SellerSignin from '../Model/SellerSignin.jsx'
 import SellerSignup from '../Model/SellerSignup.jsx'
 import AuthShell from '../Components/ui/AuthShell.jsx'
 
-// Optimized copies of the original photos (L13.jpg, L6.jpg stay in /public).
+// Optimized photos served from /public.
 const signupImage = "/L13.webp"
 const signinImage = "/L6.webp"
 
